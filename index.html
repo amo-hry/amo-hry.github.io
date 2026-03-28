@@ -19,19 +19,32 @@ html, body {
 }
 
 /* ------------------------------ */
-/* FOND TECHNO SOBRE (A)          */
+/* FOND TECHNO LIGNES ANIMÉES     */
 /* ------------------------------ */
 
 body {
-  background: linear-gradient(-45deg, #020202, #0a0f0f, #001a1a, #000000);
-  background-size: 400% 400%;
-  animation: gradientMove 12s ease infinite;
+  background: #000;
 }
 
-@keyframes gradientMove {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: 
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0,255,200,0.08) 0px,
+      rgba(0,255,200,0.08) 1px,
+      transparent 3px
+    );
+  animation: moveLines 6s linear infinite;
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+@keyframes moveLines {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(10px); }
 }
 
 /* ------------------------------ */
@@ -42,12 +55,18 @@ body {
   position: fixed;
   top: 20px;
   right: 20px;
-  width: 40px;
-  height: 40px;
+  width: 55px;
+  height: 55px;
   border-radius: 50%;
   overflow: hidden;
   z-index: 9999;
-  box-shadow: 0 0 12px rgba(0,255,200,0.35);
+  box-shadow: 0 0 14px rgba(0,255,200,0.45);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.logo-top:hover {
+  transform: scale(1.12);
+  box-shadow: 0 0 22px rgba(0,255,200,0.75);
 }
 
 .logo-top iframe {
@@ -80,8 +99,8 @@ body {
   white-space: nowrap;
   overflow: hidden;
   width: 0;
-  animation: typing 3s steps(20) forwards;
-  margin-bottom: 10px;
+  animation: typing 1.6s steps(20) forwards;
+  margin-bottom: 20px;
 }
 
 @keyframes typing {
@@ -90,21 +109,11 @@ body {
 }
 
 /* ------------------------------ */
-/* ROLE                           */
-/* ------------------------------ */
-
-.role {
-  font-size: 20px;
-  opacity: 0.85;
-  margin-bottom: 30px;
-}
-
-/* ------------------------------ */
 /* PHRASES ANIMÉES                */
 /* ------------------------------ */
 
 .bio {
-  font-size: 20px;
+  font-size: 22px;
   height: 30px;
   position: relative;
 }
@@ -171,8 +180,7 @@ body {
 
 @media (max-width: 600px) {
   .name { font-size: 32px; width: 180px; }
-  .role { font-size: 16px; }
-  .bio { font-size: 16px; }
+  .bio { font-size: 18px; }
   .bottom-menu a { font-size: 16px; }
 }
 
@@ -188,13 +196,12 @@ body {
 
 <!-- CONTENU CENTRAL -->
 <div class="content">
-  <div class="name">Amaury</div>
-  <div class="role">Cybersecurity • Bioinformatics • Builder</div>
+  <div class="name">amo_hry</div>
 
   <div class="bio">
-    <span>Cybersecurity enthusiast.</span>
-    <span>Bioinformatics in progress.</span>
-    <span>Building clean systems.</span>
+    <span>Beginner in cybersecurity</span>
+    <span>Learning by breaking & fixing</span>
+    <span>Building clean systems</span>
   </div>
 </div>
 
