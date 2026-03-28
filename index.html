@@ -7,45 +7,64 @@
 /* ------------------------------ */
 /* GLOBAL RESET                   */
 /* ------------------------------ */
+/* ------------------------------ */
+/* FOND GÉOMÉTRIQUE TECH ANIMÉ    */
+/* ------------------------------ */
 
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
+body {
   background: #000;
-  font-family: Arial, sans-serif;
+  position: relative;
+  overflow: hidden;
 }
 
-/* ------------------------------ */
-/* FOND GÉOMÉTRIQUE ANIMÉ         */
-/* ------------------------------ */
-
+/* Lignes diagonales cyan animées */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   background:
-    linear-gradient(120deg, rgba(0,255,200,0.15) 0%, transparent 60%),
-    linear-gradient(300deg, rgba(0,120,255,0.15) 0%, transparent 60%),
     repeating-linear-gradient(
-      45deg,
-      rgba(0,255,200,0.08) 0px,
-      rgba(0,255,200,0.08) 2px,
-      transparent 4px
+      135deg,
+      rgba(0,255,200,0.15) 0px,
+      rgba(0,255,200,0.15) 2px,
+      transparent 6px
     );
-  background-size: 200% 200%;
-  animation: geomove 12s linear infinite;
-  pointer-events: none;
+  animation: slideLines 12s linear infinite;
   opacity: 0.35;
+  pointer-events: none;
 }
 
-@keyframes geomove {
-  0% { background-position: 0% 0%; }
-  50% { background-position: 100% 100%; }
-  100% { background-position: 0% 0%; }
+/* Lignes horizontales fines */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0,255,255,0.08) 0px,
+      rgba(0,255,255,0.08) 1px,
+      transparent 4px
+    );
+  animation: scan 6s linear infinite;
+  opacity: 0.25;
+  pointer-events: none;
 }
+
+/* Animation diagonale */
+@keyframes slideLines {
+  0% { transform: translateX(0) translateY(0); }
+  100% { transform: translateX(-120px) translateY(-120px); }
+}
+
+/* Animation verticale subtile */
+@keyframes scan {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(12px); }
+}
+
+
+
 
 /* ------------------------------ */
 /* LOGO EN HAUT À DROITE          */
