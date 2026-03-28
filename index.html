@@ -5,7 +5,7 @@
 <style>
 
 /* ------------------------------ */
-/* GLOBAL RESET + FULLSCREEN      */
+/* GLOBAL RESET                   */
 /* ------------------------------ */
 
 html, body {
@@ -14,37 +14,37 @@ html, body {
   height: 100%;
   width: 100%;
   overflow: hidden;
+  background: #000;
   font-family: Arial, sans-serif;
-  background: #000;
 }
 
 /* ------------------------------ */
-/* FOND TECHNO LIGNES ANIMÉES     */
+/* FOND GÉOMÉTRIQUE ANIMÉ         */
 /* ------------------------------ */
-
-body {
-  background: #000;
-}
 
 body::before {
   content: "";
   position: fixed;
   inset: 0;
-  background: 
+  background:
+    linear-gradient(120deg, rgba(0,255,200,0.15) 0%, transparent 60%),
+    linear-gradient(300deg, rgba(0,120,255,0.15) 0%, transparent 60%),
     repeating-linear-gradient(
-      to bottom,
+      45deg,
       rgba(0,255,200,0.08) 0px,
-      rgba(0,255,200,0.08) 1px,
-      transparent 3px
+      rgba(0,255,200,0.08) 2px,
+      transparent 4px
     );
-  animation: moveLines 6s linear infinite;
-  opacity: 0.25;
+  background-size: 200% 200%;
+  animation: geomove 12s linear infinite;
   pointer-events: none;
+  opacity: 0.35;
 }
 
-@keyframes moveLines {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(10px); }
+@keyframes geomove {
+  0% { background-position: 0% 0%; }
+  50% { background-position: 100% 100%; }
+  100% { background-position: 0% 0%; }
 }
 
 /* ------------------------------ */
@@ -55,18 +55,18 @@ body::before {
   position: fixed;
   top: 20px;
   right: 20px;
-  width: 55px;
-  height: 55px;
+  width: 65px;
+  height: 65px;
   border-radius: 50%;
   overflow: hidden;
   z-index: 9999;
-  box-shadow: 0 0 14px rgba(0,255,200,0.45);
+  box-shadow: 0 0 18px rgba(0,255,200,0.55);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .logo-top:hover {
-  transform: scale(1.12);
-  box-shadow: 0 0 22px rgba(0,255,200,0.75);
+  transform: scale(1.15);
+  box-shadow: 0 0 28px rgba(0,255,200,0.85);
 }
 
 .logo-top iframe {
@@ -76,7 +76,7 @@ body::before {
 }
 
 /* ------------------------------ */
-/* CONTENU CENTRÉ                 */
+/* CONTENU CENTRAL                */
 /* ------------------------------ */
 
 .content {
@@ -89,23 +89,31 @@ body::before {
 }
 
 /* ------------------------------ */
-/* TITRE AVEC TYPING              */
+/* amo_hry → fade-in centre → slide */
 /* ------------------------------ */
 
 .name {
-  font-size: 42px;
+  font-size: 48px;
   font-weight: 600;
   letter-spacing: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  width: 0;
-  animation: typing 1.6s steps(20) forwards;
-  margin-bottom: 20px;
+  opacity: 0;
+  animation:
+    fadeIn 1.2s ease forwards,
+    moveToCorner 1.2s ease forwards 1.2s;
 }
 
-@keyframes typing {
-  from { width: 0; }
-  to { width: 220px; }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes moveToCorner {
+  from {
+    transform: translate(-50%, -50%);
+  }
+  to {
+    transform: translate(-350px, -250px);
+  }
 }
 
 /* ------------------------------ */
@@ -116,6 +124,7 @@ body::before {
   font-size: 22px;
   height: 30px;
   position: relative;
+  margin-top: 40px;
 }
 
 .bio span {
@@ -179,7 +188,7 @@ body::before {
 /* ------------------------------ */
 
 @media (max-width: 600px) {
-  .name { font-size: 32px; width: 180px; }
+  .name { font-size: 32px; }
   .bio { font-size: 18px; }
   .bottom-menu a { font-size: 16px; }
 }
@@ -214,3 +223,7 @@ body::before {
 
 </body>
 </html>
+
+
+ 
+ 
