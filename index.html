@@ -1,112 +1,87 @@
 <html>
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
-/* Fade-in global */
-body {
+
+/* ------------------------------ */
+/* GLOBAL RESET + FULLSCREEN      */
+/* ------------------------------ */
+
+html, body {
   margin: 0;
   padding: 0;
-  background: #000;
+  height: 100%;
+  width: 100%;
   overflow: hidden;
   font-family: Arial, sans-serif;
-  animation: fadeIn 1.8s ease forwards;
-  opacity: 0;
-  cursor: url('https://cur.cursors-4u.net/cursors/cur-2/cur116.cur'), auto;
+  background: #000;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+/* ------------------------------ */
+/* FOND TECHNO SOBRE (A)          */
+/* ------------------------------ */
+
+body {
+  background: linear-gradient(-45deg, #020202, #0a0f0f, #001a1a, #000000);
+  background-size: 400% 400%;
+  animation: gradientMove 12s ease infinite;
 }
 
-/* Scanlines + terminal overlay */
-body::before {
-  content: "";
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ------------------------------ */
+/* LOGO EN HAUT À DROITE          */
+/* ------------------------------ */
+
+.logo-top {
   position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background:
-    repeating-linear-gradient(
-      to bottom,
-      rgba(255,255,255,0.03) 0px,
-      rgba(255,255,255,0.03) 1px,
-      transparent 2px
-    ),
-    radial-gradient(circle at 50% 50%, rgba(0,255,200,0.05), transparent 70%);
-  opacity: 0.18;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
   z-index: 9999;
+  box-shadow: 0 0 12px rgba(0,255,200,0.35);
 }
 
-/* GIF plein écran */
-.bg {
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-}
-
-.bg iframe {
-  width: 100vw;
-  height: 100vh;
+.logo-top iframe {
+  width: 100%;
+  height: 100%;
   border: none;
 }
 
-/* Overlay ultra-dark */
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.55);
-  backdrop-filter: blur(3px);
-  z-index: -1;
-}
+/* ------------------------------ */
+/* CONTENU CENTRÉ                 */
+/* ------------------------------ */
 
-/* Canvas particules bio-cyber */
-#cells {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-}
-
-/* Contenu centré */
 .content {
-  position: fixed;
+  position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: white;
   text-align: center;
+  color: white;
 }
 
-/* Typing + halo + glitch */
+/* ------------------------------ */
+/* TITRE AVEC TYPING              */
+/* ------------------------------ */
+
 .name {
   font-size: 42px;
-  letter-spacing: 2px;
   font-weight: 600;
-  margin-bottom: 10px;
+  letter-spacing: 2px;
   white-space: nowrap;
   overflow: hidden;
-  border-right: 2px solid #00ffcc;
   width: 0;
-  animation:
-    typing 3s steps(20) forwards,
-    blink 0.7s infinite,
-    textPulse 4s infinite ease-in-out,
-    glitch 3s infinite;
-  position: relative;
-}
-
-@keyframes textPulse {
-  0% { text-shadow: 0 0 8px rgba(0,255,200,0.25); }
-  50% { text-shadow: 0 0 18px rgba(0,255,200,0.55); }
-  100% { text-shadow: 0 0 8px rgba(0,255,200,0.25); }
-}
-
-@keyframes glitch {
-  0% { transform: translate(0,0); }
-  20% { transform: translate(1px,-1px); }
-  40% { transform: translate(-1px,1px); }
-  60% { transform: translate(1px,1px); }
-  80% { transform: translate(-1px,-1px); }
-  100% { transform: translate(0,0); }
+  animation: typing 3s steps(20) forwards;
+  margin-bottom: 10px;
 }
 
 @keyframes typing {
@@ -114,18 +89,20 @@ body::before {
   to { width: 220px; }
 }
 
-@keyframes blink {
-  50% { border-color: transparent; }
-}
+/* ------------------------------ */
+/* ROLE                           */
+/* ------------------------------ */
 
 .role {
   font-size: 20px;
   opacity: 0.85;
   margin-bottom: 30px;
-  animation: textPulse 4s infinite ease-in-out;
 }
 
-/* Phrases animées */
+/* ------------------------------ */
+/* PHRASES ANIMÉES                */
+/* ------------------------------ */
+
 .bio {
   font-size: 20px;
   height: 30px;
@@ -151,7 +128,10 @@ body::before {
   100% { opacity: 0; }
 }
 
-/* Menu bas */
+/* ------------------------------ */
+/* MENU BAS                       */
+/* ------------------------------ */
+
 .bottom-menu {
   position: fixed;
   bottom: -80px;
@@ -164,7 +144,6 @@ body::before {
   transition: bottom 0.4s ease;
   display: flex;
   justify-content: center;
-  align-items: center;
   gap: 28px;
   border-top: 1px solid rgba(0,255,200,0.25);
   box-shadow: 0 -4px 12px rgba(0,255,200,0.25);
@@ -174,13 +153,11 @@ body::before {
   bottom: 0;
 }
 
-/* Liens néon */
 .bottom-menu a {
   color: #00ffcc;
   text-decoration: none;
   font-size: 18px;
   transition: opacity 0.3s, text-shadow 0.3s;
-  text-shadow: 0 0 10px rgba(0,255,200,0.25);
 }
 
 .bottom-menu a:hover {
@@ -188,41 +165,28 @@ body::before {
   text-shadow: 0 0 18px rgba(0,255,200,0.8);
 }
 
-/* Logo animé circulaire + glow pulsé */
-@keyframes pulseGlow {
-  0% { box-shadow: 0 0 10px rgba(0,255,200,0.25); }
-  50% { box-shadow: 0 0 22px rgba(0,255,200,0.55); }
-  100% { box-shadow: 0 0 10px rgba(0,255,200,0.25); }
+/* ------------------------------ */
+/* RESPONSIVE                     */
+/* ------------------------------ */
+
+@media (max-width: 600px) {
+  .name { font-size: 32px; width: 180px; }
+  .role { font-size: 16px; }
+  .bio { font-size: 16px; }
+  .bottom-menu a { font-size: 16px; }
 }
 
-.logo {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  overflow: hidden;
-  animation: pulseGlow 3s infinite ease-in-out;
-}
-
-.logo iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-}
 </style>
 </head>
 
 <body>
 
-<!-- GIF plein écran -->
-<div class="bg">
-  <iframe src="https://giphy.com/embed/UsFGgc45gJE3hGrSgw" allowfullscreen></iframe>
+<!-- LOGO EN HAUT À DROITE -->
+<div class="logo-top">
+  <iframe src="https://giphy.com/embed/eQuHt7jwfpcaOkRwY5" allowfullscreen></iframe>
 </div>
 
-<!-- Canvas particules bio-cyber -->
-<canvas id="cells"></canvas>
-
-<div class="overlay"></div>
-
+<!-- CONTENU CENTRAL -->
 <div class="content">
   <div class="name">Amaury</div>
   <div class="role">Cybersecurity • Bioinformatics • Builder</div>
@@ -234,105 +198,12 @@ body::before {
   </div>
 </div>
 
-<!-- Menu bas -->
+<!-- MENU BAS -->
 <div class="bottom-menu">
-  <div class="logo">
-    <iframe src="https://giphy.com/embed/eQuHt7jwfpcaOkRwY5" allowfullscreen></iframe>
-  </div>
-
   <a href="https://www.instagram.com/amo_hry/" target="_blank">Instagram</a>
   <a href="https://github.com/amo-hry" target="_blank">GitHub</a>
   <a href="https://tryhackme.com/p/amo.hry" target="_blank">TryHackMe</a>
 </div>
-
-<!-- Particules bio-cyber -->
-<script>
-const canvas = document.getElementById('cells');
-const ctx = canvas.getContext('2d');
-let particles = [];
-let w, h;
-
-function resize() {
-  w = canvas.width = window.innerWidth;
-  h = canvas.height = window.innerHeight;
-}
-window.addEventListener('resize', resize);
-resize();
-
-function createParticles() {
-  particles = [];
-  const count = 40;
-  for (let i = 0; i < count; i++) {
-    particles.push({
-      x: Math.random() * w,
-      y: Math.random() * h,
-      r: 6 + Math.random() * 10,
-      dx: (Math.random() - 0.5) * 0.3,
-      dy: (Math.random() - 0.5) * 0.3,
-      alpha: 0.08 + Math.random() * 0.12
-    });
-  }
-}
-createParticles();
-
-function draw() {
-  ctx.clearRect(0, 0, w, h);
-  particles.forEach(p => {
-    p.x += p.dx;
-    p.y += p.dy;
-
-    if (p.x < -20) p.x = w + 20;
-    if (p.x > w + 20) p.x = -20;
-    if (p.y < -20) p.y = h + 20;
-    if (p.y > h + 20) p.y = -20;
-
-    // cellule style MET stylisée
-    const gradient = ctx.createRadialGradient(p.x, p.y, p.r * 0.2, p.x, p.y, p.r);
-    gradient.addColorStop(0, `rgba(0,255,200,${p.alpha * 1.2})`);
-    gradient.addColorStop(0.4, `rgba(0,255,200,${p.alpha})`);
-    gradient.addColorStop(1, `rgba(0,0,0,0)`);
-
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-    ctx.fill();
-
-    // membrane fine
-    ctx.strokeStyle = `rgba(0,255,200,${p.alpha * 1.5})`;
-    ctx.lineWidth = 0.6;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.r * 0.9, 0, Math.PI * 2);
-    ctx.stroke();
-  });
-
-  requestAnimationFrame(draw);
-}
-draw();
-</script>
-
-<!-- Konami Code -->
-<script>
-let konami = [];
-const konamiCode = [
-  "ArrowUp","ArrowUp",
-  "ArrowDown","ArrowDown",
-  "ArrowLeft","ArrowRight",
-  "ArrowLeft","ArrowRight",
-  "b","a"
-];
-
-document.addEventListener("keydown", (e) => {
-  konami.push(e.key);
-
-  if (konami.length > konamiCode.length) {
-    konami.shift();
-  }
-
-  if (JSON.stringify(konami) === JSON.stringify(konamiCode)) {
-    window.location.href = "secret.html";
-  }
-});
-</script>
 
 </body>
 </html>
