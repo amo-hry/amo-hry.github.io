@@ -4,15 +4,9 @@
 
 <style>
 
-/* ------------------------------ */
-/* GLOBAL RESET                   */
-/* ------------------------------ */
-/* ------------------------------ */
-/* FOND GÉOMÉTRIQUE TECH ANIMÉ    */
-/* ------------------------------ */
 
 /* ------------------------------ */
-/* FOND TECH STYLE “LASER LINES”  */
+/* FOND TECH MULTI-LIGNES         */
 /* ------------------------------ */
 
 body {
@@ -21,51 +15,70 @@ body {
   overflow: hidden;
 }
 
-/* Lignes diagonales multicolores */
+/* Lignes diagonales cyan, rose, vert */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   background:
-    linear-gradient(45deg, rgba(0,255,255,0.25), transparent 70%),
-    linear-gradient(135deg, rgba(255,0,80,0.25), transparent 70%),
-    linear-gradient(225deg, rgba(255,200,0,0.25), transparent 70%),
-    linear-gradient(315deg, rgba(0,120,255,0.25), transparent 70%);
-  background-size: 200% 200%;
-  animation: lasers 12s linear infinite;
-  pointer-events: none;
+    /* Cyan */
+    repeating-linear-gradient(
+      135deg,
+      rgba(0,255,255,0.25) 0px,
+      rgba(0,255,255,0.25) 3px,
+      transparent 10px
+    ),
+    /* Rose */
+    repeating-linear-gradient(
+      135deg,
+      rgba(255,0,150,0.25) 0px,
+      rgba(255,0,150,0.25) 2px,
+      transparent 14px
+    ),
+    /* Vert */
+    repeating-linear-gradient(
+      135deg,
+      rgba(0,255,120,0.25) 0px,
+      rgba(0,255,120,0.25) 2px,
+      transparent 12px
+    );
+  background-size: 250% 250%;
+  animation: laserShift 18s linear infinite;
   opacity: 0.55;
+  pointer-events: none;
 }
 
-/* Lignes fines cyan */
+/* Glow + scan horizontal */
 body::after {
   content: "";
   position: fixed;
   inset: 0;
   background:
+    radial-gradient(circle at 50% 50%, rgba(0,255,255,0.15), transparent 70%),
     repeating-linear-gradient(
-      90deg,
-      rgba(0,255,255,0.12) 0px,
-      rgba(0,255,255,0.12) 2px,
-      transparent 6px
+      to bottom,
+      rgba(0,255,255,0.10) 0px,
+      rgba(0,255,255,0.10) 1px,
+      transparent 4px
     );
-  animation: scanlines 6s linear infinite;
-  pointer-events: none;
+  animation: scanMove 7s linear infinite;
   opacity: 0.25;
+  pointer-events: none;
 }
 
-/* Animation des lasers */
-@keyframes lasers {
+/* Animation diagonale lente */
+@keyframes laserShift {
   0% { background-position: 0% 0%; }
   50% { background-position: 100% 100%; }
   100% { background-position: 0% 0%; }
 }
 
-/* Animation des lignes fines */
-@keyframes scanlines {
+/* Animation verticale subtile */
+@keyframes scanMove {
   0% { transform: translateY(0); }
-  100% { transform: translateY(12px); }
+  100% { transform: translateY(14px); }
 }
+
 
 
 /* ------------------------------ */
