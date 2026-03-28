@@ -3,181 +3,79 @@
 <style>
   body {
     margin: 0;
+    padding: 0;
+    background: #0a0a0a;
     overflow: hidden;
-    background: black;
+    font-family: Arial, sans-serif;
   }
 
-  /* KALEIDOSCOPE INTERACTIF */
-  .kaleido {
+  .bg {
     position: fixed;
     inset: 0;
-    background-image: url('https://cdn.generationvoyage.fr/2024/06/Temple-Kinkaku-ji-a-Kyoto-Japon-reflete-dans-un-lac-entoure-de-verdure-1000x668.jpeg');
-    background-size: cover;
-    background-position: center;
-    transform-origin: center;
-    filter: brightness(1.2) saturate(1.3);
-    mask-image: repeating-conic-gradient(
-      transparent 0deg 30deg,
-      black 30deg 60deg
-    );
-    transition: transform 0.05s linear;
+    z-index: -1;
   }
 
-  /* MENU SECRET HACKER */
-  #secretMenu {
+  .bg iframe {
+    width: 100vw;
+    height: 100vh;
+    border: none;
+  }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(2px);
+  }
+
+  .content {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: rgba(10,10,10,0.85);
-    padding: 30px;
-    border-radius: 12px;
-    color: #00ff95;
-    font-family: monospace;
-    font-size: 22px;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.6s ease;
-    z-index: 20;
-    border: 2px solid #00ff95;
-    box-shadow: 0 0 20px #00ff95;
-  }
-
-  #secretMenu.visible {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  /* SCANLINES */
-  #secretMenu::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: repeating-linear-gradient(
-      transparent 0px,
-      transparent 2px,
-      rgba(0,255,150,0.1) 3px
-    );
-    pointer-events: none;
-  }
-
-  /* HOTSPOT INVISIBLE */
-  .hotspot {
-    position: fixed;
-    bottom: 5%;
-    right: 5%;
-    width: 120px;
-    height: 120px;
-    cursor: pointer;
-    z-index: 10;
-    background: rgba(255,0,0,0.1); /* enlève après debug */
-  }
-
-  /* GLITCH ROUGE */
-  .glitch {
-    position: fixed;
-    inset: 0;
-    background: rgba(255,0,0,0.4);
-    mix-blend-mode: screen;
-    opacity: 0;
-    z-index: 30;
-    pointer-events: none;
-    animation: none;
-  }
-
-  @keyframes glitchFlash {
-    0% { opacity: 0; }
-    20% { opacity: 1; }
-    40% { opacity: 0.4; }
-    60% { opacity: 1; }
-    100% { opacity: 0; }
-  }
-
-  /* GIF ZINZIN */
-  .crazyGif {
-    position: fixed;
-    width: 200px;
-    height: auto;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(0.5);
-    opacity: 0;
-    z-index: 40;
-    pointer-events: none;
-    transition: opacity 0.2s ease;
+    color: white;
+    text-align: center;
+    font-size: 32px;
+    letter-spacing: 2px;
   }
 </style>
 </head>
 
 <body>
 
-<div class="kaleido" id="kaleido"></div>
-
-<!-- Zone secrète -->
-<div class="hotspot" onclick="askCode()"></div>
-
-<!-- Menu secret -->
-<div id="secretMenu">
-  > ACCESS GRANTED  
-  <br><br>
-  > LOADING MODULES...  
-  <br>
-  > SYSTEM ONLINE  
-  <br><br>
-  > Welcome Amaury.
+<div class="bg">
+  <iframe src="https://giphy.com/embed/eQuHt7jwfpcaOkRwY5" allowfullscreen></iframe>
 </div>
 
-<!-- Glitch rouge -->
-<div class="glitch" id="glitch"></div>
+<div class="overlay"></div>
 
-<!-- GIF zinzin -->
-<img src="https://media.tenor.com/2roX3uxz_68AAAAM/cat-vibing.gif" class="crazyGif" id="gif1">
-<img src="https://media.tenor.com/0W0X2h8ailIAAAAM/cat-meme.gif" class="crazyGif" id="gif2">
-
-<!-- Son mystique -->
-<audio id="mysticSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_7f8e3e1b4f.mp3?filename=deep-meditation-ambient-110397.mp3"></audio>
+<div class="content">
+  Bienvenue.
+</div>
 
 <script>
-  /* KALEIDOSCOPE INTERACTIF */
-  const kaleido = document.getElementById("kaleido");
+let konami = [];
+const konamiCode = [
+  "ArrowUp","ArrowUp",
+  "ArrowDown","ArrowDown",
+  "ArrowLeft","ArrowRight",
+  "ArrowLeft","ArrowRight",
+  "b","a"
+];
 
-  document.addEventListener("mousemove", (e) => {
-    const x = e.clientX / window.innerWidth;
-    const angle = (x - 0.5) * 720;
-    kaleido.style.transform = `rotate(${angle}deg) scale(1.4)`;
-  });
+document.addEventListener("keydown", (e) => {
+  konami.push(e.key);
 
-  /* MENU SECRET + GLITCH + GIF */
-  function askCode() {
-    const code = prompt("Entrez le code secret :");
-
-    if (code === "777") {
-      document.getElementById("secretMenu").classList.add("visible");
-      document.getElementById("mysticSound").play();
-    } else {
-      triggerGlitch();
-    }
+  if (konami.length > konamiCode.length) {
+    konami.shift();
   }
 
-  function triggerGlitch() {
-    const glitch = document.getElementById("glitch");
-    const gif1 = document.getElementById("gif1");
-    const gif2 = document.getElementById("gif2");
-
-    glitch.style.animation = "glitchFlash 0.6s ease";
-
-    gif1.style.opacity = 1;
-    gif2.style.opacity = 1;
-
-    setTimeout(() => {
-      glitch.style.animation = "none";
-      gif1.style.opacity = 0;
-      gif2.style.opacity = 0;
-    }, 600);
+  if (JSON.stringify(konami) === JSON.stringify(konamiCode)) {
+    window.location.href = "secret.html";
   }
+});
 </script>
 
 </body>
 </html>
-
 
