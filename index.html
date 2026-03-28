@@ -8,6 +8,9 @@
 /* ------------------------------ */
 /* FOND TECH MULTI-LIGNES         */
 /* ------------------------------ */
+/* ------------------------------ */
+/* FOND TECH MULTI-DIRECTIONS     */
+/* ------------------------------ */
 
 body {
   background: #000;
@@ -15,69 +18,76 @@ body {
   overflow: hidden;
 }
 
-/* Lignes diagonales cyan, rose, vert */
+/* Trois couches de lignes dans 3 directions */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
+
   background:
-    /* Cyan */
+    /* Cyan — 45° */
     repeating-linear-gradient(
-      135deg,
-      rgba(0,255,255,0.25) 0px,
-      rgba(0,255,255,0.25) 3px,
+      45deg,
+      rgba(0,255,255,0.18) 0px,
+      rgba(0,255,255,0.18) 2px,
       transparent 10px
     ),
-    /* Rose */
+
+    /* Rose — -45° */
     repeating-linear-gradient(
-      135deg,
-      rgba(255,0,150,0.25) 0px,
-      rgba(255,0,150,0.25) 2px,
-      transparent 14px
-    ),
-    /* Vert */
-    repeating-linear-gradient(
-      135deg,
-      rgba(0,255,120,0.25) 0px,
-      rgba(0,255,120,0.25) 2px,
+      -45deg,
+      rgba(255,80,180,0.18) 0px,
+      rgba(255,80,180,0.18) 2px,
       transparent 12px
+    ),
+
+    /* Vert — vertical */
+    repeating-linear-gradient(
+      90deg,
+      rgba(0,255,120,0.15) 0px,
+      rgba(0,255,120,0.15) 1px,
+      transparent 8px
     );
-  background-size: 250% 250%;
-  animation: laserShift 18s linear infinite;
-  opacity: 0.55;
+
+  background-size: 220% 220%;
+  animation: linesMove 22s linear infinite;
+  opacity: 0.45;
   pointer-events: none;
 }
 
-/* Glow + scan horizontal */
+/* Glow + scan léger */
 body::after {
   content: "";
   position: fixed;
   inset: 0;
+
   background:
-    radial-gradient(circle at 50% 50%, rgba(0,255,255,0.15), transparent 70%),
+    radial-gradient(circle at 50% 50%, rgba(0,255,255,0.12), transparent 70%),
     repeating-linear-gradient(
       to bottom,
-      rgba(0,255,255,0.10) 0px,
-      rgba(0,255,255,0.10) 1px,
+      rgba(255,255,255,0.05) 0px,
+      rgba(255,255,255,0.05) 1px,
       transparent 4px
     );
-  animation: scanMove 7s linear infinite;
-  opacity: 0.25;
+
+  animation: scanSoft 10s linear infinite;
+  opacity: 0.20;
   pointer-events: none;
 }
 
-/* Animation diagonale lente */
-@keyframes laserShift {
+/* Animation diagonale douce */
+@keyframes linesMove {
   0% { background-position: 0% 0%; }
   50% { background-position: 100% 100%; }
   100% { background-position: 0% 0%; }
 }
 
-/* Animation verticale subtile */
-@keyframes scanMove {
+/* Scan vertical très léger */
+@keyframes scanSoft {
   0% { transform: translateY(0); }
-  100% { transform: translateY(14px); }
+  100% { transform: translateY(10px); }
 }
+
 
 
 
