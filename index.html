@@ -4,9 +4,16 @@
   body {
     margin: 0;
     padding: 0;
-    background: #0a0a0a;
+    background: #000;
     overflow: hidden;
     font-family: Arial, sans-serif;
+    animation: fadeIn 1.8s ease forwards;
+    opacity: 0;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
   /* GIF plein écran */
@@ -22,12 +29,12 @@
     border: none;
   }
 
-  /* Overlay sombre */
+  /* Overlay ultra-dark */
   .overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.45);
-    backdrop-filter: blur(2px);
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(3px);
   }
 
   /* Contenu centré */
@@ -38,6 +45,7 @@
     transform: translate(-50%, -50%);
     color: white;
     text-align: center;
+    text-shadow: 0 0 12px rgba(0,255,200,0.25);
   }
 
   /* Typing effect */
@@ -64,8 +72,9 @@
 
   .role {
     font-size: 20px;
-    opacity: 0.8;
+    opacity: 0.85;
     margin-bottom: 30px;
+    text-shadow: 0 0 10px rgba(0,255,200,0.25);
   }
 
   /* Phrases animées */
@@ -97,18 +106,19 @@
   /* Menu bas */
   .bottom-menu {
     position: fixed;
-    bottom: -70px;
+    bottom: -80px;
     left: 0;
     width: 100%;
-    background: rgba(0,0,0,0.6);
-    backdrop-filter: blur(4px);
-    padding: 15px 0;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(6px);
+    padding: 18px 0;
     text-align: center;
     transition: bottom 0.4s ease;
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 25px;
+    gap: 28px;
+    border-top: 1px solid rgba(0,255,200,0.15);
   }
 
   .bottom-menu:hover {
@@ -120,18 +130,20 @@
     text-decoration: none;
     font-size: 18px;
     transition: opacity 0.3s;
+    text-shadow: 0 0 10px rgba(0,255,200,0.25);
   }
 
   .bottom-menu a:hover {
     opacity: 0.6;
   }
 
-  /* Logo animé */
+  /* Logo animé circulaire */
   .logo {
-    width: 40px;
-    height: 40px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
     overflow: hidden;
-    border-radius: 6px;
+    box-shadow: 0 0 12px rgba(0,255,200,0.35);
   }
 
   .logo iframe {
@@ -165,7 +177,7 @@
 <!-- Menu bas -->
 <div class="bottom-menu">
 
-  <!-- Logo animé -->
+  <!-- Logo animé circulaire -->
   <div class="logo">
     <iframe src="https://giphy.com/embed/eQuHt7jwfpcaOkRwY5" allowfullscreen></iframe>
   </div>
