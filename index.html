@@ -17,19 +17,21 @@ body {
   to { opacity: 1; }
 }
 
-/* Scanlines cyber */
+/* Scanlines cyber + terminal overlay */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background: repeating-linear-gradient(
-    to bottom,
-    rgba(255,255,255,0.03) 0px,
-    rgba(255,255,255,0.03) 1px,
-    transparent 2px
-  );
-  opacity: 0.15;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.03) 0px,
+      rgba(255,255,255,0.03) 1px,
+      transparent 2px
+    ),
+    radial-gradient(circle at 50% 50%, rgba(0,255,200,0.05), transparent 70%);
+  opacity: 0.18;
   z-index: 9999;
 }
 
@@ -62,10 +64,9 @@ body::before {
   transform: translate(-50%, -50%);
   color: white;
   text-align: center;
-  text-shadow: 0 0 12px rgba(0,255,200,0.25);
 }
 
-/* Typing effect */
+/* Typing effect + glitch + halo pulsé */
 .name {
   font-size: 42px;
   letter-spacing: 2px;
@@ -75,7 +76,29 @@ body::before {
   overflow: hidden;
   border-right: 2px solid #00ffcc;
   width: 0;
-  animation: typing 3s steps(20) forwards, blink 0.7s infinite;
+  animation:
+    typing 3s steps(20) forwards,
+    blink 0.7s infinite,
+    textPulse 4s infinite ease-in-out,
+    glitch 3s infinite;
+  position: relative;
+}
+
+/* Halo pulsé */
+@keyframes textPulse {
+  0% { text-shadow: 0 0 8px rgba(0,255,200,0.25); }
+  50% { text-shadow: 0 0 18px rgba(0,255,200,0.55); }
+  100% { text-shadow: 0 0 8px rgba(0,255,200,0.25); }
+}
+
+/* Glitch léger */
+@keyframes glitch {
+  0% { transform: translate(0,0); }
+  20% { transform: translate(1px,-1px); }
+  40% { transform: translate(-1px,1px); }
+  60% { transform: translate(1px,1px); }
+  80% { transform: translate(-1px,-1px); }
+  100% { transform: translate(0,0); }
 }
 
 @keyframes typing {
@@ -91,7 +114,7 @@ body::before {
   font-size: 20px;
   opacity: 0.85;
   margin-bottom: 30px;
-  text-shadow: 0 0 10px rgba(0,255,200,0.25);
+  animation: textPulse 4s infinite ease-in-out;
 }
 
 /* Phrases animées */
@@ -138,7 +161,7 @@ body::before {
 
   /* Liseré lumineux */
   border-top: 1px solid rgba(0,255,200,0.25);
-  box-shadow: 0 -4px 12px rgba(0,255,200,0.15);
+  box-shadow: 0 -4px 12px rgba(0,255,200,0.25);
 }
 
 .bottom-menu:hover {
@@ -179,4 +202,3 @@ body::before {
   height: 100%;
   border: none;
 }
-
