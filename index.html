@@ -9,6 +9,7 @@
     font-family: Arial, sans-serif;
   }
 
+  /* GIF plein écran */
   .bg {
     position: fixed;
     inset: 0;
@@ -21,13 +22,15 @@
     border: none;
   }
 
+  /* Overlay sombre */
   .overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.4);
+    background: rgba(0,0,0,0.45);
     backdrop-filter: blur(2px);
   }
 
+  /* Contenu centré */
   .content {
     position: fixed;
     top: 50%;
@@ -35,24 +38,106 @@
     transform: translate(-50%, -50%);
     color: white;
     text-align: center;
-    font-size: 32px;
+  }
+
+  .name {
+    font-size: 42px;
     letter-spacing: 2px;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
+  .role {
+    font-size: 20px;
+    opacity: 0.8;
+    margin-bottom: 30px;
+  }
+
+  /* Phrases animées */
+  .bio {
+    font-size: 20px;
+    height: 30px;
+    position: relative;
+  }
+
+  .bio span {
+    opacity: 0;
+    position: absolute;
+    width: 100%;
+    animation: fade 9s infinite;
+  }
+
+  .bio span:nth-child(1) { animation-delay: 0s; }
+  .bio span:nth-child(2) { animation-delay: 3s; }
+  .bio span:nth-child(3) { animation-delay: 6s; }
+
+  @keyframes fade {
+    0% { opacity: 0; }
+    10% { opacity: 1; }
+    30% { opacity: 1; }
+    40% { opacity: 0; }
+    100% { opacity: 0; }
+  }
+
+  /* Menu bas */
+  .bottom-menu {
+    position: fixed;
+    bottom: -60px;
+    left: 0;
+    width: 100%;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    padding: 15px 0;
+    text-align: center;
+    transition: bottom 0.4s ease;
+  }
+
+  .bottom-menu:hover {
+    bottom: 0;
+  }
+
+  .bottom-menu a {
+    color: #00ffcc;
+    margin: 0 20px;
+    text-decoration: none;
+    font-size: 18px;
+    transition: opacity 0.3s;
+  }
+
+  .bottom-menu a:hover {
+    opacity: 0.6;
   }
 </style>
 </head>
 
 <body>
 
+<!-- GIF plein écran -->
 <div class="bg">
-  <iframe src="https://giphy.com/embed/eQuHt7jwfpcaOkRwY5" allowfullscreen></iframe>
+  <iframe src="https://giphy.com/embed/UsFGgc45gJE3hGrSgw" allowfullscreen></iframe>
 </div>
 
 <div class="overlay"></div>
 
 <div class="content">
-  Bienvenue.
+  <div class="name">Amaury</div>
+  <div class="role">Cybersecurity • Bioinformatics • Builder</div>
+
+  <div class="bio">
+    <span>Cybersecurity enthusiast.</span>
+    <span>Bioinformatics in progress.</span>
+    <span>Building clean systems.</span>
+  </div>
 </div>
 
+<!-- Menu bas -->
+<div class="bottom-menu">
+  <a href="https://www.instagram.com/amo_hry/" target="_blank">Instagram</a>
+  <a href="https://github.com/amo-hry" target="_blank">GitHub</a>
+  <a href="https://tryhackme.com/p/amo.hry" target="_blank">TryHackMe</a>
+</div>
+
+<!-- Konami Code -->
 <script>
 let konami = [];
 const konamiCode = [
@@ -78,4 +163,3 @@ document.addEventListener("keydown", (e) => {
 
 </body>
 </html>
-
