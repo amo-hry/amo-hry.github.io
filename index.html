@@ -1,158 +1,129 @@
-<html>
-  <head>
-    <style>
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+  }
 
-      body {
-        margin: 0;
-        overflow: hidden;
-        background: #02040a;
-        font-family: system-ui, sans-serif;
-        color: white;
-      }
+  /* IMAGE DE FOND */
+  .bg {
+    position: fixed;
+    inset: 0;
+    background-image: url('https://cdn.generationvoyage.fr/2024/06/Temple-Kinkaku-ji-a-Kyoto-Japon-reflete-dans-un-lac-entoure-de-verdure-1000x668.jpeg');
+    background-size: cover;
+    background-position: center;
+    z-index: -5;
+  }
 
-      /* Conteneur du fond */
-      .bg-scene {
-        position: fixed;
-        inset: 0;
-        overflow: hidden;
-        z-index: -1;
-        perspective: 1200px;
-      }
+  /* EAU QUI COULE (cascade + lac) */
+  .water {
+    position: fixed;
+    inset: 0;
+    background-image: url('https://i.imgur.com/8K3YQ0F.png');
+    background-size: 35%;
+    opacity: 0.22;
+    mix-blend-mode: screen;
+    animation: flow 6s linear infinite;
+    z-index: -4;
+  }
 
-      /* Couche lointaine (montagnes / brume) */
-      .layer-back {
-        position: absolute;
-        inset: -10%;
-        background: radial-gradient(circle at top,
-          #1b2a3f 0%,
-          #050814 45%,
-          #02040a 100%);
-        transform: translateZ(-300px) scale(1.3);
-        filter: blur(4px);
-        animation: slow-drift 40s linear infinite;
-      }
+  @keyframes flow {
+    from { background-position: 0 0; }
+    to   { background-position: 0 600px; }
+  }
 
-      /* Couche milieu (forêt / relief) */
-      .layer-mid {
-        position: absolute;
-        inset: -5%;
-        background:
-          radial-gradient(circle at 20% 80%, rgba(40,120,120,0.4) 0, transparent 40%),
-          radial-gradient(circle at 80% 70%, rgba(120,80,160,0.4) 0, transparent 45%),
-          linear-gradient(to top, #050b14 0%, transparent 40%);
-        transform: translateZ(-150px) scale(1.15);
-        mix-blend-mode: screen;
-        animation: mid-drift 30s linear infinite;
-      }
+  /* REFLET ANIMÉ SUR LE LAC */
+  .reflection {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 50% 80%, rgba(255,255,255,0.15), transparent 60%);
+    mix-blend-mode: soft-light;
+    opacity: 0.25;
+    animation: shimmer 8s ease-in-out infinite;
+    z-index: -3;
+  }
 
-      /* Couche avant (rivière / cascade stylisée) */
-      .layer-front {
-        position: absolute;
-        left: -20%;
-        right: -20%;
-        bottom: -10%;
-        height: 60%;
-        background:
-          linear-gradient(to top,
-            rgba(10,180,200,0.9),
-            rgba(120,220,255,0.7),
-            rgba(255,255,255,0.2)),
-          repeating-linear-gradient(
-            -10deg,
-            rgba(255,255,255,0.25) 0,
-            rgba(255,255,255,0.25) 4px,
-            transparent 4px,
-            transparent 10px
-          );
-        border-radius: 50% 50% 0 0;
-        filter: blur(1px);
-        opacity: 0.9;
-        transform: translateZ(0) translateY(10px);
-        animation: river-flow 12s ease-in-out infinite;
-      }
+  @keyframes shimmer {
+    0%   { transform: translateY(0); opacity: 0.15; }
+    50%  { transform: translateY(8px); opacity: 0.28; }
+    100% { transform: translateY(0); opacity: 0.15; }
+  }
 
-      /* Lueur globale */
-      .glow-mist {
-        position: absolute;
-        inset: 0;
-        background:
-          radial-gradient(circle at 50% 20%, rgba(200,230,255,0.35) 0, transparent 55%),
-          radial-gradient(circle at 10% 90%, rgba(120,200,200,0.25) 0, transparent 45%),
-          radial-gradient(circle at 90% 80%, rgba(200,140,255,0.25) 0, transparent 45%);
-        mix-blend-mode: screen;
-        opacity: 0.9;
-        animation: mist-pulse 18s ease-in-out infinite;
-      }
+  /* BRUME LÉGÈRE */
+  .mist {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 50% 20%, rgba(255,255,255,0.18), transparent 70%);
+    mix-blend-mode: screen;
+    opacity: 0.35;
+    animation: mistPulse 12s ease-in-out infinite;
+    z-index: -2;
+  }
 
-      /* Contenu par-dessus */
-      .content {
-        position: relative;
-        z-index: 10;
-        height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-      }
+  @keyframes mistPulse {
+    0%   { opacity: 0.25; }
+    50%  { opacity: 0.45; }
+    100% { opacity: 0.25; }
+  }
 
-      .title {
-        font-size: 42px;
-        letter-spacing: 0.15em;
-        text-transform: uppercase;
-        text-shadow:
-          0 0 12px rgba(180,220,255,0.9),
-          0 0 30px rgba(80,160,255,0.8);
-        animation: title-glow 4s ease-in-out infinite;
-      }
+  /* POISSONS KOI ANIMÉS */
+  .koi {
+    position: fixed;
+    width: 80px;
+    height: 80px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    opacity: 0.9;
+    z-index: -1;
+    filter: drop-shadow(0 0 6px rgba(255,255,255,0.4));
+  }
 
-      @keyframes slow-drift {
-        from { transform: translateZ(-300px) scale(1.3) translateX(0); }
-        to   { transform: translateZ(-300px) scale(1.3) translateX(-80px); }
-      }
+  /* Koi 1 */
+  .koi1 {
+    background-image: url('https://i.imgur.com/4o5tZ8G.png');
+    top: 65%;
+    left: -10%;
+    animation: swim1 22s linear infinite;
+  }
 
-      @keyframes mid-drift {
-        from { transform: translateZ(-150px) scale(1.15) translateX(0); }
-        to   { transform: translateZ(-150px) scale(1.15) translateX(60px); }
-      }
+  @keyframes swim1 {
+    from { transform: translateX(0) translateY(0) rotate(0deg); }
+    to   { transform: translateX(130vw) translateY(-10px) rotate(4deg); }
+  }
 
-      @keyframes river-flow {
-        0%   { transform: translateZ(0) translateY(10px) translateX(0); }
-        50%  { transform: translateZ(0) translateY(5px) translateX(40px); }
-        100% { transform: translateZ(0) translateY(10px) translateX(0); }
-      }
+  /* Koi 2 */
+  .koi2 {
+    background-image: url('https://i.imgur.com/4o5tZ8G.png');
+    top: 72%;
+    left: -15%;
+    transform: scale(0.8);
+    animation: swim2 28s linear infinite;
+  }
 
-      @keyframes mist-pulse {
-        0%   { opacity: 0.7; }
-        50%  { opacity: 1; }
-        100% { opacity: 0.7; }
-      }
+  @keyframes swim2 {
+    from { transform: translateX(0) translateY(0) rotate(-2deg) scale(0.8); }
+    to   { transform: translateX(140vw) translateY(12px) rotate(2deg) scale(0.8); }
+  }
 
-      @keyframes title-glow {
-        0%   { text-shadow: 0 0 10px rgba(180,220,255,0.7); }
-        50%  { text-shadow: 0 0 25px rgba(120,200,255,1); }
-        100% { text-shadow: 0 0 10px rgba(180,220,255,0.7); }
-      }
-    </style>
-  </head>
+  /* Koi 3 */
+  .koi3 {
+    background-image: url('https://i.imgur.com/4o5tZ8G.png');
+    top: 68%;
+    left: -20%;
+    transform: scale(1.2);
+    animation: swim3 32s linear infinite;
+  }
 
-  <body>
-    <div class="bg-scene">
-      <div class="layer-back"></div>
-      <div class="layer-mid"></div>
-      <div class="layer-front"></div>
-      <div class="glow-mist"></div>
-    </div>
+  @keyframes swim3 {
+    from { transform: translateX(0) translateY(0) rotate(1deg) scale(1.2); }
+    to   { transform: translateX(150vw) translateY(-6px) rotate(-1deg) scale(1.2); }
+  }
+</style>
 
-    <div class="content">
-      <div class="title">
-        AMAURY // RIVIÈRE MENTALE
-      </div>
-    </div>
-  </body>
-</html>
+<div class="bg"></div>
+<div class="water"></div>
+<div class="reflection"></div>
+<div class="mist"></div>
 
+<div class="koi koi1"></div>
+<div class="koi koi2"></div>
+<div class="koi koi3"></div>
