@@ -1,0 +1,745 @@
+<!-- ============================================================
+     CAVALE — semer les flics · L'arrière-salle
+     Course-poursuite nocturne en pseudo-3D façon borne 1986.
+     On est au volant (vue cockpit), la route serpente vers
+     l'horizon, on esquive le trafic, et les gyrophares collent
+     au train. Tiens le plus longtemps possible avant l'arrestation.
+     Flèches / ZQSD : conduire · gaz auto possible.
+     Tél : volant gauche/droite, pédales gaz/frein.
+     À régler en premier :  <<< CHANGE ICI  (dans le script)
+     ============================================================ -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Cavale — L'arrière-salle</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{ --ink:#0E0A0B; --bone:#E8E2D6; --smoke:#8A8079;
+         --neon:#2FD6C6; --oxblood:#E0392F; --sodium:#E9A23B;
+         --bleu:#3B6BE9; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; overflow:hidden; }
+  body{
+    background:var(--ink); color:var(--bone);
+    font-family:'Space Mono',monospace;
+    display:flex; flex-direction:column; align-items:center;
+    touch-action:none; -webkit-tap-highlight-color:transparent;
+    background-image:
+      radial-gradient(60vw 50vw at 85% -8%, rgba(233,162,59,.08), transparent 60%),
+      radial-gradient(50vw 50vw at -10% 110%, rgba(59,107,233,.10), transparent 60%);
+  }
+  body::after{
+    content:""; position:fixed; inset:0; z-index:999; pointer-events:none;
+    opacity:.28; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .hud{ width:min(680px,96vw); display:flex; justify-content:space-between;
+    align-items:flex-end; padding:.6rem 0 .4rem; }
+  .hud .ttl{ font-family:'Press Start 2P',monospace; font-size:.8rem;
+    color:var(--neon); text-shadow:2px 2px 0 rgba(47,214,198,.25); }
+  .hud .sub{ font-size:.52rem; letter-spacing:.2em; text-transform:uppercase;
+    color:var(--smoke); margin-top:.4rem; }
+  .hud .right{ text-align:right; font-family:'Press Start 2P',monospace; }
+  .hud .sc{ font-size:.78rem; color:var(--sodium); text-shadow:0 0 8px rgba(233,162,59,.6); }
+  .hud .meta{ font-size:.55rem; color:var(--smoke); margin-top:.4rem; }
+
+  .stage{ position:relative; width:min(680px,96vw); }
+  canvas{ display:block; width:100%; aspect-ratio:4/3;
+    image-rendering:pixelated; border-radius:10px;
+    border:2px solid rgba(232,226,214,.13); background:#0a0a14; min-height:46vw; max-height:80vh;}
+
+  .pedals{ position:absolute; inset:0; display:none; z-index:25; }
+  body.touch .pedals{ display:block; }
+  .pedals .zone{ position:absolute; bottom:0; height:46%;
+    display:grid; place-items:center; font-family:'Press Start 2P',monospace;
+    font-size:.5rem; color:rgba(232,226,214,.5); user-select:none; }
+  .pedals .lft{ left:0; width:26%; }
+  .pedals .rgt{ left:26%; width:26%; }
+  .pedals .brk{ right:0; width:22%; color:rgba(224,57,47,.6); }
+  .pedals .gaz{ right:22%; width:26%; color:rgba(47,214,198,.6); }
+  .pedals .zone:active{ background:rgba(232,226,214,.06); }
+  .pedals .zone i{ font-size:1.4rem; font-style:normal; display:block; margin-bottom:.3rem; }
+
+  .overlay{ position:absolute; inset:0; display:grid; place-items:center;
+    text-align:center; background:rgba(10,8,16,.9); border-radius:10px; padding:1.3rem; z-index:40; }
+  .overlay.hidden{ display:none; }
+  .overlay h2{ font-family:'Press Start 2P',monospace; font-size:1.2rem; line-height:1.45;
+    color:var(--neon); text-shadow:2px 2px 0 rgba(47,214,198,.3); margin-bottom:.85rem; }
+  .overlay h2.bust{ color:var(--oxblood); text-shadow:2px 2px 0 rgba(224,57,47,.35); }
+  .overlay p{ color:var(--smoke); font-size:.68rem; line-height:1.8;
+    margin-bottom:1rem; max-width:42ch; }
+  .overlay p b{ color:var(--bone); }
+  .overlay .stats{ font-family:'Press Start 2P',monospace; font-size:.6rem; line-height:2.1;
+    color:var(--bone); margin-bottom:1rem; }
+  .overlay .stats b{ color:var(--sodium); }
+  button.go{ font-family:'Press Start 2P',monospace; font-size:.68rem; cursor:pointer;
+    background:var(--neon); color:var(--ink); border:none; border-radius:6px;
+    padding:.95rem 1.3rem; }
+  button.go:active{ transform:translateY(1px); }
+  .hint{ width:min(680px,96vw); text-align:center; color:var(--smoke);
+    font-size:.55rem; letter-spacing:.05em; padding:.4rem 0; }
+</style>
+</head>
+<body>
+
+  <div class="hud">
+    <div>
+      <div class="ttl">CAVALE</div>
+      <div class="sub">semer les flics · l'arrière-salle</div>
+    </div>
+    <div class="right">
+      <div class="sc"><span id="score">0</span></div>
+      <div class="meta"><span id="kmh">0</span> km/h · <span id="temps">0.0</span>s</div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <canvas id="cv" width="320" height="240"></canvas>
+    <div class="pedals">
+      <div class="zone lft" id="pLeft"><i>&#9664;</i>GAUCHE</div>
+      <div class="zone rgt" id="pRight"><i>&#9654;</i>DROITE</div>
+      <div class="zone gaz" id="pGaz"><i>&#9650;</i>GAZ</div>
+      <div class="zone brk" id="pBrk"><i>&#9660;</i>FREIN</div>
+    </div>
+    <div class="overlay" id="ov">
+      <div>
+        <h2 id="ovT">CAVALE</h2>
+        <div id="ovBody">
+          <p>Minuit passé, t'es grillé. Garde le pied au plancher, <b>esquive le trafic</b> et surtout <b>sème les gyrophares</b> collés à ton pare-chocs. S'ils te plaquent trop longtemps, la barre rouge se remplit et c'est l'<b>arrestation</b>. Tiens le plus longtemps possible.</p>
+        </div>
+        <button class="go" id="play">Démarrer en trombe</button>
+      </div>
+    </div>
+  </div>
+  <div class="hint" id="hint">flèches / ZQSD : conduire · gaz tenu auto &nbsp;|&nbsp; tél : volant + pédales</div>
+
+<script>
+/* ============================================================
+   COURSE CORE — cavale nocturne, semer la police
+   Route en pseudo-3D façon arcade 1986 : la route est une suite
+   de segments projetés vers l'horizon (z), avec virages et bosses.
+   On esquive le trafic ; derrière, une voiture de police colle au
+   train et remplit une jauge d'arrestation quand elle est au
+   contact. Tenir le plus longtemps possible.
+   Aucun DOM ici : tout est testable en Node, puis injecté.
+   ============================================================ */
+function CourseCore(opts){
+  opts = opts || {};
+  const CFG = Object.assign({
+    seed:(Math.random()*1e9)|0,
+    vitesseMax:340,        // vitesse de pointe (unités/s en z)
+    accel:46, frein:130, horsRoute:0.42,
+    seuilArrest:3.2,       // secondes de contact flic = arrestation
+    trafic:1.0
+  }, opts);
+
+  function mulberry32(seed){
+    let a=seed>>>0;
+    return function(){
+      a|=0; a=(a+0x6D2B79F5)|0;
+      let t=Math.imul(a^(a>>>15),1|a);
+      t=(t+Math.imul(t^(t>>>7),61|t))^t;
+      return ((t^(t>>>14))>>>0)/4294967296;
+    };
+  }
+  const rng = mulberry32(CFG.seed);
+
+  /* ---------- la route : segments avec courbure et pente ---------- */
+  const SEG = 200;                 // longueur d'un segment en z
+  const N = 1600;                  // nb de segments (la piste boucle)
+  const ROUTE_L = SEG*N;
+  const LARGEUR = 2000;            // demi-largeur de la route
+  const VOIES = 3;
+  const segs = [];
+  (function build(){
+    // courbes et collines générées par paliers doux
+    let courbe=0, pente=0, restant=0, dCourbe=0, dPente=0;
+    for (let i=0;i<N;i++){
+      if (restant<=0){
+        restant = 30 + (rng()*90|0);
+        dCourbe = (rng()*2-1) * (rng()<0.55?0:1) * 3.4;   // souvent tout droit
+        dPente  = (rng()*2-1) * (rng()<0.5?0:1) * 22;
+      }
+      courbe += (dCourbe - courbe)*0.09;
+      pente  += (dPente  - pente )*0.07;
+      restant--;
+      segs.push({ i, courbe, y: Math.sin(i*0.06)*0 + pente*0, _p:pente });
+    }
+    // intègre la pente en hauteur cumulée (pour le relief vertical)
+    let h=0;
+    for (let i=0;i<N;i++){ h += segs[i]._p; segs[i].y = h; }
+  })();
+  function segAt(z){ return segs[((z/SEG)|0) % N]; }
+
+  /* ---------- état ---------- */
+  const S = {
+    z:0, vitesse:0, x:0,           // x: position latérale -1..1 (centre 0)
+    distance:0, temps:0, score:0,
+    arrest:0, over:false, busted:false,
+    secousse:0, events:[]
+  };
+
+  /* ---------- trafic ---------- */
+  const trafic = [];               // {z, voie, x, v, type}
+  function voieX(voie){ return (voie - (VOIES-1)/2) * (1.4/VOIES); }
+  function spawnTrafic(devantZ){
+    const voie = rng()*VOIES|0;
+    trafic.push({
+      z: devantZ, voie, x: voieX(voie),
+      v: CFG.vitesseMax*(0.32+rng()*0.22),     // ils roulent moins vite
+      type: rng()<0.18?'camion':'voiture',
+      double:false
+    });
+  }
+  // amorce
+  for (let k=0;k<7;k++) spawnTrafic((6 + k*5 + rng()*3)*SEG + 4*SEG);
+
+  /* ---------- police ---------- */
+  const police = { z:-7*SEG, x:0, v:0, voie:1, actif:true, colle:false, flash:0 };
+
+  /* ---------- helpers de distance bouclée ---------- */
+  function dz(aheadZ, refZ){
+    let d = aheadZ - refZ;
+    while (d < -ROUTE_L/2) d += ROUTE_L;
+    while (d >  ROUTE_L/2) d -= ROUTE_L;
+    return d;
+  }
+
+  /* ---------- contrôle joueur ---------- */
+  function step(dt, input){
+    if (S.over){
+      // on laisse la scène vivre un peu (police qui dépasse, etc.) mais sans logique de jeu
+      return;
+    }
+    input = input || {};
+    S.temps += dt;
+
+    // accélération / frein
+    const vMax = CFG.vitesseMax;
+    if (input.gaz)      S.vitesse += CFG.accel*dt*60* (S.vitesse<vMax?1:0);
+    else if (input.frein) S.vitesse -= CFG.frein*dt*60;
+    else               S.vitesse -= CFG.accel*0.5*dt*60;    // frein moteur
+    // hors route : ça freine fort
+    if (Math.abs(S.x) > 1) S.vitesse -= vMax*CFG.horsRoute*dt*60;
+    if (S.vitesse < 0) S.vitesse = 0;
+    if (S.vitesse > vMax) S.vitesse = vMax;
+
+    // direction (d'autant plus efficace qu'on roule vite, mais pas à l'arrêt)
+    const seg = segAt(S.z);
+    const tenue = Math.min(1, S.vitesse/vMax + 0.15);
+    if (input.gauche) S.x -= 1.7*dt*tenue;
+    if (input.droite) S.x += 1.7*dt*tenue;
+    // force centrifuge dans les virages
+    S.x -= seg.courbe * (S.vitesse/vMax) * dt * 0.7;
+
+    // avance en z
+    const dzv = S.vitesse*dt;
+    S.z = (S.z + dzv) % ROUTE_L;
+    S.distance += dzv;
+    S.score += dzv*0.01 * (1 + (police.colle?1.5:0));   // colле = plus de points (risque)
+
+    // limites latérales franches
+    if (S.x < -1.45){ S.x=-1.45; S.vitesse*=0.985; }
+    if (S.x >  1.45){ S.x= 1.45; S.vitesse*=0.985; }
+
+    if (S.secousse>0) S.secousse=Math.max(0,S.secousse-dt*3);
+
+    updateTrafic(dt);
+    updatePolice(dt);
+
+    // jauge d'arrestation
+    if (police.colle){
+      S.arrest += dt;
+      if (S.arrest >= CFG.seuilArrest){
+        S.over=true; S.busted=true;
+        S.events.push({type:'busted'});
+      }
+    } else {
+      S.arrest = Math.max(0, S.arrest - dt*0.6);   // elle redescend si on s'échappe
+    }
+  }
+
+  function updateTrafic(dt){
+    let plusLoin = -1e9;
+    for (let k=trafic.length-1;k>=0;k--){
+      const c = trafic[k];
+      c.z = (c.z + c.v*dt) % ROUTE_L;
+      const d = dz(c.z, S.z);
+      if (d > plusLoin) plusLoin = d;
+      // trop loin derrière -> on recycle devant
+      if (d < -12*SEG){
+        trafic.splice(k,1);
+        continue;
+      }
+      // collision avec le joueur ?
+      if (d>-1.2*SEG && d<1.2*SEG){
+        const dxv = Math.abs(c.x - S.x);
+        const seuil = c.type==='camion'?0.34:0.26;
+        if (dxv < seuil){
+          // choc : on perd de la vitesse, secousse, la police en profite
+          if (S.vitesse > c.v){
+            S.vitesse = c.v*0.6;
+            S.secousse = 1;
+            S.events.push({type:'choc', dur:c.type});
+            // léger rebond latéral
+            S.x += (S.x>c.x?1:-1)*0.12;
+          }
+        }
+      }
+    }
+    // garder ~8 véhicules devant
+    let devant = trafic.filter(c=>dz(c.z,S.z)>0).length;
+    while (devant < 8){
+      spawnTrafic((S.z + (8 + (Math.random()*8))*SEG) % ROUTE_L);
+      devant++;
+    }
+  }
+
+  function updatePolice(dt){
+    if (!police.actif){ police.colle = false; return; }
+    const vMax = CFG.vitesseMax;
+    // la police vise un peu plus vite que le joueur pour pouvoir le rattraper,
+    // mais cogne le trafic elle aussi (ce qui la ralentit)
+    const d = dz(S.z, police.z);          // distance dont la police est DERRIÈRE le joueur
+    let cible = vMax*1.06;
+    // si elle est loin, elle pousse ; si elle est au contact, elle cale sur le joueur
+    if (d < 1.5*SEG) cible = S.vitesse*1.0;
+    police.v += (cible - police.v) * Math.min(1, dt*1.5);
+    if (police.v<0) police.v=0;
+    police.z = (police.z + police.v*dt) % ROUTE_L;
+
+    // suit latéralement le joueur (avec retard)
+    police.x += (S.x - police.x) * Math.min(1, dt*2.2);
+
+    // trafic gêne la police : si une voiture est juste devant elle, elle ralentit
+    for (const c of trafic){
+      const dc = dz(c.z, police.z);
+      if (dc>0 && dc<1.0*SEG && Math.abs(c.x-police.x)<0.3){
+        police.v *= 0.97;
+        if (rng()<0.04) police.x += (police.x>c.x?1:-1)*0.1;
+      }
+    }
+
+    // au contact ?
+    const dApres = dz(S.z, police.z);
+    police.colle = (dApres > -0.4*SEG && dApres < 1.1*SEG && Math.abs(police.x-S.x) < 0.34);
+    police.flash = (police.flash + dt*9) % (Math.PI*2);
+
+    // distance d'échappée : si on prend beaucoup d'avance, on souffle
+    if (dApres > 9*SEG){
+      S.events.push({type:'distance'});
+      // on téléporte doucement la police plus près pour que ça reste tendu (relance)
+      police.z = (S.z - (5+rng()*2)*SEG + ROUTE_L) % ROUTE_L;
+    }
+  }
+
+  /* ---------- projection (pour le rendu, testée pour la cohérence) ---------- */
+  function project(zRel, camHauteur, camProfondeur, larg, haut){
+    const z = Math.max(1, zRel);
+    const scale = camProfondeur / z;
+    return {
+      scale,
+      sx: larg/2,                          // x latéral ajouté par l'appelant
+      sy: haut/2 - scale*camHauteur*haut/2,
+      sw: scale * LARGEUR * larg/2
+    };
+  }
+
+  return { S, segs, trafic, police, CFG,
+           SEG, N, ROUTE_L, LARGEUR, VOIES,
+           segAt, voieX, dz, step, project,
+           // accès lecture pour le shell
+           etat:()=>S };
+}
+if (typeof module!=='undefined') module.exports = CourseCore;
+
+</script>
+<script>
+/* =================== RÉGLAGES ===================   <<< CHANGE ICI */
+const REGLAGES = {
+  DIFFICULTE: 1.0,    // densité du trafic et hargne des flics (1 = normal)
+  GAZ_AUTO: true,     // true = la voiture accélère seule (arcade), false = il faut tenir le gaz
+  VOLUME: 0.8
+};
+
+/* =================== MISE EN PLACE =================== */
+const IW=320, IH=240;
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+const ov = document.getElementById('ov');
+const ovT = document.getElementById('ovT');
+const ovBody = document.getElementById('ovBody');
+const playBtn = document.getElementById('play');
+const scoreEl = document.getElementById('score');
+const kmhEl = document.getElementById('kmh');
+const tempsEl = document.getElementById('temps');
+
+const isTouch = matchMedia('(pointer:coarse)').matches;
+if (isTouch) document.body.classList.add('touch');
+
+let core = null, started = false, record = 0;
+const CAM_H = 1.35, CAM_D = 0.84, HORIZON = IH*0.42;
+
+function newGame(){
+  core = CourseCore({
+    trafic: REGLAGES.DIFFICULTE,
+    seuilArrest: 3.2 / REGLAGES.DIFFICULTE,
+    vitesseMax: 340
+  });
+}
+
+/* ---- couleurs de la route ---- */
+const COUL = {
+  herbe:['#10231f','#0c1c19'], route:['#2a2730','#262430'],
+  bord:['#E8E2D6','#3a3540'], ligne:'#E9A23B'
+};
+
+/* ---- rendu pseudo-3D ---- */
+// constantes calibrées pour remplir le canvas 320x240 :
+// le segment le plus proche atterrit en bas (y=IH), large ~84% ; le lointain à l'horizon.
+const CAM_DEPTH = 0.84;
+const PROJ_H = (IH - HORIZON) * 200 / CAM_DEPTH;     // = SEG*(IH-HORIZON)/CAM_DEPTH
+const PROJ_W = (IW * 0.42) * 200 / (CAM_DEPTH * 2000); // route ~84% au plus près
+
+function render(){
+  const S = core.S;
+  // ciel dégradé nuit
+  const sky = ctx.createLinearGradient(0,0,0,HORIZON);
+  sky.addColorStop(0,'#140e22'); sky.addColorStop(1,'#2a1830');
+  ctx.fillStyle = sky; ctx.fillRect(0,0,IW,HORIZON);
+  // lune
+  ctx.fillStyle = 'rgba(232,226,214,.85)';
+  ctx.beginPath(); ctx.arc(IW-52, 30, 13, 0, 7); ctx.fill();
+  ctx.fillStyle = '#2a1830';
+  ctx.beginPath(); ctx.arc(IW-46, 26, 11, 0, 7); ctx.fill();
+  drawSkyline(S);
+  // sol sombre sous l'horizon
+  ctx.fillStyle = COUL.herbe[1]; ctx.fillRect(0,HORIZON,IW,IH-HORIZON);
+
+  const baseIndex = (S.z/core.SEG|0);
+  const camX = S.x * core.LARGEUR;
+  const NB = 180;                          // segments dessinés
+
+  // positions écran (proche -> lointain), courbure cumulée pour serpenter
+  const pts = [];
+  let xCurve = 0, dxCurve = 0;
+  for (let n=0; n<NB; n++){
+    const idx = (baseIndex + n) % core.N;
+    const seg = core.segs[idx];
+    const zCam = (n*core.SEG) - (S.z % core.SEG) + 1;
+    const scale = CAM_DEPTH / zCam;
+    const sy = HORIZON + scale * PROJ_H;
+    const sw = scale * core.LARGEUR * PROJ_W;
+    dxCurve += seg.courbe;
+    xCurve  += dxCurve;
+    const sx = IW/2 + (xCurve - camX) * scale * PROJ_W;
+    pts.push({ sx, sy, sw, idx, scale });
+    seg._proj = pts[n];
+  }
+
+  // dessin du fond vers l'avant
+  let clip = IH+2;
+  for (let n=NB-1; n>0; n--){
+    const p = pts[n], q = pts[n-1];        // p loin, q proche
+    if (q.sy <= p.sy) continue;            // colline retournée : saute
+    if (p.sy > clip) continue;
+    const alt = (p.idx>>1)&1;
+    ctx.fillStyle = COUL.herbe[alt];
+    ctx.fillRect(0, p.sy, IW, q.sy-p.sy+1);
+    poly(p.sx-p.sw, p.sy, p.sx+p.sw, p.sy, q.sx+q.sw, q.sy, q.sx-q.sw, q.sy, COUL.route[alt]);
+    const bwp=Math.max(0.6,p.sw*0.09), bwq=Math.max(0.8,q.sw*0.09);
+    poly(p.sx-p.sw, p.sy, p.sx-p.sw+bwp, p.sy, q.sx-q.sw+bwq, q.sy, q.sx-q.sw, q.sy, COUL.bord[alt]);
+    poly(p.sx+p.sw-bwp, p.sy, p.sx+p.sw, p.sy, q.sx+q.sw, q.sy, q.sx+q.sw-bwq, q.sy, COUL.bord[alt]);
+    if (alt && q.sw>2){
+      const lwp=Math.max(0.4,p.sw*0.025), lwq=Math.max(0.6,q.sw*0.025);
+      poly(p.sx-lwp, p.sy, p.sx+lwp, p.sy, q.sx+lwq, q.sy, q.sx-lwq, q.sy, COUL.ligne);
+    }
+    clip = p.sy;
+  }
+
+  // sprites (trafic + police), du plus loin au plus proche
+  const sprites = [];
+  for (const c of core.trafic){
+    const d = core.dz(c.z, S.z);
+    if (d>0 && d < NB*core.SEG) sprites.push({d, x:c.x, kind:c.type});
+  }
+  const dp = core.dz(core.police.z, S.z);
+  if (dp > -3*core.SEG && dp < NB*core.SEG)
+    sprites.push({d:dp, x:core.police.x, kind:'police', flash:core.police.flash});
+  sprites.sort((a,b)=>b.d-a.d);
+  for (const sp of sprites) drawSprite(sp, S);
+
+  drawCockpit(S);
+
+  if (S.secousse>0.02){
+    ctx.fillStyle = 'rgba(224,57,47,'+(S.secousse*0.2)+')';
+    ctx.fillRect(0,0,IW,IH);
+  }
+  drawBust(S);
+}
+
+function poly(x1,y1,x2,y2,x3,y3,x4,y4,col){
+  ctx.fillStyle = col;
+  ctx.beginPath();
+  ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.lineTo(x3,y3); ctx.lineTo(x4,y4);
+  ctx.closePath(); ctx.fill();
+}
+
+function drawSkyline(S){
+  ctx.fillStyle = 'rgba(20,14,30,.9)';
+  const shift = (S.z*0.002) % 40;
+  for (let i=-1;i<10;i++){
+    const x = i*36 - shift;
+    const h = 10 + ((i*37)%5)*5;
+    ctx.fillRect(x, HORIZON-h, 26, h);
+    // fenêtres
+    ctx.fillStyle = 'rgba(233,162,59,.25)';
+    for (let wy=0; wy<h-4; wy+=5)
+      for (let wx=2; wx<22; wx+=6)
+        if (((i*7+wy+wx)%3)===0) ctx.fillRect(x+wx, HORIZON-h+wy+2, 2, 2);
+    ctx.fillStyle = 'rgba(20,14,30,.9)';
+  }
+}
+
+function spriteScreen(sp){
+  const n = Math.round(sp.d / core.SEG);
+  const idx = ((core.S.z/core.SEG|0) + n) % core.N;
+  const seg = core.segs[idx];
+  if (!seg || !seg._proj) return null;
+  const p = seg._proj;
+  return { x: p.sx + sp.x * p.sw, y: p.sy, w: p.sw, scale: p.scale };
+}
+
+function drawSprite(sp, S){
+  const pos = spriteScreen(sp);
+  if (!pos) return;
+  const sc = Math.min(2.4, pos.scale*55);
+  if (sc < 0.05) return;
+  const w = (sp.kind==='camion'?34:26) * sc;
+  const h = (sp.kind==='camion'?30:20) * sc;
+  const x = pos.x, y = pos.y;
+  ctx.save();
+  ctx.translate(x, y - h*0.5);
+  // ombre
+  ctx.fillStyle = 'rgba(0,0,0,.4)';
+  ctx.beginPath(); ctx.ellipse(0, h*0.5, w*0.55, h*0.16, 0, 0, 7); ctx.fill();
+  if (sp.kind==='police'){
+    // carrosserie noir/blanc
+    ctx.fillStyle = '#15151c'; roundRectP(-w/2, -h/2, w, h, 3*sc);
+    ctx.fillStyle = '#E8E2D6'; ctx.fillRect(-w/2, -h*0.1, w, h*0.32);
+    // gyrophares
+    const on = Math.sin(sp.flash)>0;
+    ctx.fillStyle = on ? '#3B6BE9' : '#1a2a55';
+    ctx.fillRect(-w*0.34, -h*0.62, w*0.28, h*0.2);
+    ctx.fillStyle = on ? '#7a1d18' : '#E0392F';
+    ctx.fillRect(w*0.06, -h*0.62, w*0.28, h*0.2);
+    if (on){ ctx.fillStyle='rgba(59,107,233,.5)'; ctx.fillRect(-w*0.5,-h*0.7,w,h*0.5); }
+    // halo lumineux quand proche
+    if (sc>1){
+      ctx.fillStyle = on ? 'rgba(59,107,233,.25)':'rgba(224,57,47,.25)';
+      ctx.beginPath(); ctx.arc(0,-h*0.3, w*0.7, 0, 7); ctx.fill();
+    }
+  } else {
+    const col = sp.kind==='camion' ? '#8A8079' : '#E9A23B';
+    ctx.fillStyle = col; roundRectP(-w/2, -h/2, w, h, 3*sc);
+    // lunette arrière + feux
+    ctx.fillStyle = 'rgba(20,14,12,.7)'; ctx.fillRect(-w*0.34, -h*0.3, w*0.68, h*0.3);
+    ctx.fillStyle = '#E0392F';
+    ctx.fillRect(-w*0.42, h*0.2, w*0.22, h*0.18);
+    ctx.fillRect(w*0.20, h*0.2, w*0.22, h*0.18);
+  }
+  ctx.restore();
+}
+function roundRectP(x,y,w,h,r){
+  r=Math.max(0,Math.min(r,w/2,h/2));
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); ctx.fill();
+}
+
+function drawCockpit(S){
+  const lean = Math.max(-1,Math.min(1, S.x*0.6 + core.segAt(S.z).courbe*0.1));
+  const cx = IW/2 - lean*8;
+  const cy = IH - 4;
+  const bounce = (S.vitesse>5 ? Math.sin(performance.now()/55)*1.2 : 0);
+  ctx.save();
+  ctx.translate(cx, cy + bounce);
+  ctx.rotate(lean*0.04);
+  // ombre sous la voiture
+  ctx.fillStyle='rgba(0,0,0,.45)';
+  ctx.beginPath(); ctx.ellipse(0,-6,52,9,0,0,7); ctx.fill();
+  // carrosserie (notre bolide turquoise, vu de l'arrière)
+  ctx.fillStyle = '#2FD6C6';
+  roundRectP(-46,-58,92,58,9);
+  // toit / lunette
+  ctx.fillStyle = '#0d4a45';
+  roundRectP(-34,-78,68,30,8);
+  ctx.fillStyle = 'rgba(14,10,11,.55)';
+  roundRectP(-30,-74,60,22,6);
+  // bandes
+  ctx.fillStyle = '#E9A23B'; ctx.fillRect(-6,-58,4,58); ctx.fillRect(4,-58,4,58);
+  // feux arrière
+  ctx.fillStyle = S.vitesse<40||S.secousse>0.1 ? '#ff4438' : '#E0392F';
+  ctx.shadowColor='rgba(224,57,47,.8)'; ctx.shadowBlur=8;
+  roundRectP(-44,-20,16,12,3); roundRectP(28,-20,16,12,3);
+  ctx.shadowBlur=0;
+  // pare-chocs
+  ctx.fillStyle='#15151c'; ctx.fillRect(-46,-8,92,8);
+  ctx.restore();
+}
+
+function drawBust(S){
+  const f = Math.min(1, S.arrest/core.CFG.seuilArrest);
+  if (f<=0.01 && !core.police.colle) return;
+  const w = IW*0.5, x = (IW-w)/2, y = 8;
+  ctx.fillStyle='rgba(0,0,0,.5)'; ctx.fillRect(x-2,y-2,w+4,10);
+  ctx.fillStyle = f>0.66?'#E0392F':f>0.33?'#E9A23B':'#2FD6C6';
+  ctx.fillRect(x, y, w*f, 6);
+  ctx.font='6px "Press Start 2P", monospace';
+  ctx.fillStyle = f>0.5?'#E0392F':'rgba(232,226,214,.8)';
+  ctx.textAlign='center';
+  ctx.fillText(core.police.colle?'ILS TE TIENNENT !':'RECHERCHÉ', IW/2, y+14);
+  ctx.textAlign='left';
+}
+
+/* ---- sons : moteur (oscillateur piloté) + sirène ---- */
+let AC=null, master=null, engine=null, engGain=null, siren=null, sirenGain=null, sirLfo=null;
+function audioInit(){
+  if (AC){ if(AC.state==='suspended') AC.resume(); return; }
+  try{
+    AC = new (window.AudioContext||window.webkitAudioContext)();
+    master = AC.createGain(); master.gain.value=REGLAGES.VOLUME*0.5; master.connect(AC.destination);
+    // moteur
+    engine = AC.createOscillator(); engine.type='sawtooth';
+    engGain = AC.createGain(); engGain.gain.value=0;
+    const ef = AC.createBiquadFilter(); ef.type='lowpass'; ef.frequency.value=800;
+    engine.connect(ef); ef.connect(engGain); engGain.connect(master); engine.start();
+    // sirène (deux tons via LFO sur la fréquence)
+    siren = AC.createOscillator(); siren.type='square';
+    sirenGain = AC.createGain(); sirenGain.gain.value=0;
+    sirLfo = AC.createOscillator(); sirLfo.type='sine'; sirLfo.frequency.value=2.2;
+    const sld = AC.createGain(); sld.gain.value=180;
+    sirLfo.connect(sld); sld.connect(siren.frequency);
+    siren.frequency.value=760;
+    siren.connect(sirenGain); sirenGain.connect(master);
+    siren.start(); sirLfo.start();
+  }catch(e){ AC=null; }
+}
+function snd(f,d,type,g,slide){
+  if(!AC) return;
+  const t=AC.currentTime, o=AC.createOscillator(), v=AC.createGain();
+  o.type=type; o.frequency.setValueAtTime(f,t);
+  if(slide) o.frequency.exponentialRampToValueAtTime(slide,t+d);
+  v.gain.setValueAtTime(g,t); v.gain.exponentialRampToValueAtTime(0.0001,t+d);
+  o.connect(v); v.connect(master); o.start(t); o.stop(t+d+0.02);
+}
+function majSon(){
+  if(!AC) return;
+  const S=core.S, v=S.vitesse/core.CFG.vitesseMax;
+  if (engine){
+    engine.frequency.setTargetAtTime(55 + v*150, AC.currentTime, 0.05);
+    engGain.gain.setTargetAtTime(started && !S.over ? 0.05+v*0.05 : 0, AC.currentTime, 0.1);
+  }
+  // sirène : volume selon proximité de la police
+  if (sirenGain){
+    const d = core.dz(core.police.z, S.z);
+    const proche = Math.max(0, 1 - Math.abs(d)/(6*core.SEG));
+    sirenGain.gain.setTargetAtTime(started && !S.over && core.police.actif ? proche*0.05 : 0,
+      AC.currentTime, 0.2);
+  }
+}
+
+/* ---- événements moteur ---- */
+function consume(){
+  for (const e of core.S.events.splice(0)){
+    if (e.type==='choc'){ snd(150,.18,'sawtooth',.12,60); }
+    else if (e.type==='distance'){ snd(880,.1,'sine',.05); }
+    else if (e.type==='busted'){ siege(); setTimeout(fin, 700); }
+  }
+}
+function siege(){ // petit jingle d'arrestation
+  [440,392,349,294].forEach((f,i)=>setTimeout(()=>snd(f,.25,'square',.08),i*180));
+}
+function fin(){
+  started=false;
+  record = Math.max(record, Math.floor(core.S.temps*100)/100);
+  const t = core.S.temps.toFixed(1);
+  const km = (core.S.distance/1000).toFixed(1);
+  ovT.textContent='ARRÊTÉ !'; ovT.className='bust';
+  ovBody.innerHTML='<div class="stats">CAVALE : <b>'+t+'s</b><br>'+
+    'distance <b>'+km+' km</b> · score <b>'+core.S.score.toLocaleString('fr-FR',{maximumFractionDigits:0})+'</b><br>'+
+    'meilleur temps <b>'+record.toFixed(1)+'s</b></div>';
+  playBtn.textContent='Repartir';
+  ov.classList.remove('hidden');
+}
+
+/* ---- entrées ---- */
+const input = { gaz:REGLAGES.GAZ_AUTO, frein:false, gauche:false, droite:false };
+const keys = {};
+addEventListener('keydown', e=>{
+  const k=e.key.toLowerCase();
+  if(['arrowleft','q','a'].includes(k)){ input.gauche=true; e.preventDefault(); }
+  if(['arrowright','d'].includes(k)){ input.droite=true; e.preventDefault(); }
+  if(['arrowup','z','w'].includes(k)){ input.gaz=true; e.preventDefault(); }
+  if(['arrowdown','s'].includes(k)){ input.frein=true; input.gaz=false; e.preventDefault(); }
+});
+addEventListener('keyup', e=>{
+  const k=e.key.toLowerCase();
+  if(['arrowleft','q','a'].includes(k)) input.gauche=false;
+  if(['arrowright','d'].includes(k)) input.droite=false;
+  if(['arrowup','z','w'].includes(k)){ if(!REGLAGES.GAZ_AUTO) input.gaz=false; }
+  if(['arrowdown','s'].includes(k)){ input.frein=false; if(REGLAGES.GAZ_AUTO) input.gaz=true; }
+});
+function bindPedal(id, on){
+  const el=document.getElementById(id);
+  const set=(v)=>{
+    if(on==='gauche') input.gauche=v;
+    if(on==='droite') input.droite=v;
+    if(on==='gaz') input.gaz = v || (REGLAGES.GAZ_AUTO && !v ? true : v);
+    if(on==='frein'){ input.frein=v; if(REGLAGES.GAZ_AUTO) input.gaz=!v; }
+  };
+  el.addEventListener('touchstart',e=>{ audioInit(); set(true); e.preventDefault(); },{passive:false});
+  el.addEventListener('touchend',e=>{ set(false); e.preventDefault(); },{passive:false});
+}
+bindPedal('pLeft','gauche'); bindPedal('pRight','droite');
+bindPedal('pGaz','gaz'); bindPedal('pBrk','frein');
+
+/* ---- boucle à pas fixe ---- */
+let last=performance.now(), acc=0;
+function frame(now){
+  requestAnimationFrame(frame);
+  let dt=(now-last)/1000; last=now; if(dt>0.1) dt=0.1;
+  acc+=dt; let n=0;
+  while(acc>=1/60 && n<4){
+    if(started && !core.S.over) core.step(1/60, input);
+    acc-=1/60; n++;
+  }
+  if(n===4) acc=0;
+  consume(); majSon();
+  render();
+  scoreEl.textContent = Math.floor(core.S.score).toLocaleString('fr-FR');
+  kmhEl.textContent = Math.round(core.S.vitesse);
+  tempsEl.textContent = core.S.temps.toFixed(1);
+}
+
+playBtn.addEventListener('click', ()=>{
+  audioInit();
+  newGame();
+  input.gaz = REGLAGES.GAZ_AUTO; input.frein=false; input.gauche=false; input.droite=false;
+  started=true;
+  ov.classList.add('hidden');
+});
+
+newGame();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

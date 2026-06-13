@@ -1,0 +1,884 @@
+<!-- ============================================================
+     TAROT — L'arrière-salle · toi contre 3 adversaires
+     Vraies règles du tarot français : enchères, chien, écart,
+     fournir/couper/monter, Excuse, Petit au bout, scores officiels.
+     Moteur de règles testé en simulation puis injecté tel quel.
+     À changer en premier :  <<< CHANGE ICI  (dans le script)
+     ============================================================ -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tarot — L'arrière-salle</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{ --ink:#0E0A0B; --bone:#E8E2D6; --smoke:#8A8079;
+         --neon:#2FD6C6; --oxblood:#B5302A; --sodium:#E9A23B; --felt:#13110F; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    background:var(--ink); color:var(--bone);
+    font-family:'Space Mono',ui-monospace,monospace; line-height:1.5;
+    min-height:100vh; -webkit-tap-highlight-color:transparent;
+    background-image:
+      radial-gradient(70vw 60vw at 80% -10%, rgba(233,162,59,.10), transparent 60%),
+      radial-gradient(60vw 60vw at -10% 110%, rgba(181,48,42,.10), transparent 60%);
+  }
+  body::after{
+    content:""; position:fixed; inset:0; z-index:999; pointer-events:none;
+    opacity:.35; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .wrap{ width:min(560px,96vw); margin:0 auto; padding:.9rem 0 11rem; }
+
+  .top{ display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:.7rem; }
+  .top h1{ font-family:'Big Shoulders Display',sans-serif; font-weight:800;
+    font-size:1.7rem; text-transform:uppercase; line-height:.9;
+    color:var(--neon); text-shadow:0 0 10px rgba(47,214,198,.4); }
+  .top .sub{ font-size:.6rem; letter-spacing:.2em; text-transform:uppercase; color:var(--smoke); margin-top:.3rem; }
+  .top .right{ text-align:right; font-size:.62rem; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--smoke); }
+  .top .right b{ font-family:'Big Shoulders Display',sans-serif; font-size:1.3rem;
+    color:var(--sodium); display:block; line-height:.95; }
+
+  /* ---- adversaires ---- */
+  .opps{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:.45rem; margin-bottom:.6rem; }
+  .opp{ background:var(--felt); border:1px solid rgba(232,226,214,.10);
+    border-radius:10px; padding:.5rem .55rem; position:relative; min-height:64px; }
+  .opp .nm{ font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; color:var(--bone); }
+  .opp .backs{ display:flex; margin-top:.35rem; height:18px; }
+  .opp .backs i{ width:12px; height:17px; border-radius:2px; margin-left:-7px;
+    background:repeating-linear-gradient(45deg, rgba(47,214,198,.25) 0 3px, transparent 3px 6px), #14110f;
+    border:1px solid rgba(47,214,198,.45); }
+  .opp .backs i:first-child{ margin-left:0; }
+  .opp .cnt{ position:absolute; right:.5rem; top:.5rem; font-size:.6rem; color:var(--smoke); }
+  .opp .bub{ position:absolute; left:.45rem; bottom:.35rem; font-size:.58rem;
+    color:var(--sodium); letter-spacing:.04em; min-height:1em; }
+  .opp.preneur{ border-color:var(--sodium); box-shadow:0 0 14px rgba(233,162,59,.18); }
+  .opp.preneur .nm::after{ content:" · PRENEUR"; color:var(--sodium); }
+  .opp.turn{ border-color:var(--neon); }
+
+  /* ---- table / pli ---- */
+  .table{ background:linear-gradient(180deg, rgba(255,255,255,.015), transparent), var(--felt);
+    border:1px solid rgba(232,226,214,.10); border-radius:14px;
+    padding:.7rem; margin-bottom:.6rem; }
+  .statline{ text-align:center; font-size:.6rem; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--smoke); min-height:1.1em; margin-bottom:.4rem; }
+  .statline b{ color:var(--sodium); }
+  .trick{ position:relative; height:188px; }
+  .slot{ position:absolute; width:60px; text-align:center; }
+  .slot .ph{ width:56px; height:80px; border:1px dashed rgba(232,226,214,.14);
+    border-radius:7px; margin:0 auto; }
+  .slot .tag{ font-size:.52rem; color:var(--smoke); letter-spacing:.08em;
+    text-transform:uppercase; margin-top:.2rem; }
+  .slot.win .card{ box-shadow:0 0 0 2px var(--neon), 0 0 18px rgba(47,214,198,.5); }
+  .slot-n{ top:0; left:50%; transform:translateX(-50%); }
+  .slot-w{ top:52px; left:8px; }
+  .slot-e{ top:52px; right:8px; }
+  .slot-s{ bottom:0; left:50%; transform:translateX(-50%); }
+
+  .chien{ display:none; text-align:center; padding:.5rem 0 .2rem; }
+  .chien.show{ display:block; }
+  .chien .lbl{ font-size:.6rem; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--sodium); margin-bottom:.4rem; }
+  .chien .cards{ display:flex; justify-content:center; gap:.3rem; flex-wrap:wrap; }
+
+  /* ---- cartes ---- */
+  .card{ width:56px; height:80px; border-radius:7px; flex:0 0 auto; position:relative;
+    background:var(--bone); color:var(--ink); font-weight:700;
+    box-shadow:0 4px 10px rgba(0,0,0,.5); user-select:none; }
+  .card .r{ position:absolute; top:4px; left:6px; font-size:.74rem; line-height:1.05; white-space:pre; }
+  .card .big{ position:absolute; inset:0; display:grid; place-items:center; font-size:1.6rem; }
+  .card.red{ color:var(--oxblood); }
+  .card.atout{ background:#1d1716; color:var(--sodium); border:1px solid rgba(233,162,59,.65); }
+  .card.atout .big{ font-family:'Big Shoulders Display',sans-serif; font-size:2.1rem; font-weight:800;
+    text-shadow:0 0 10px rgba(233,162,59,.45); }
+  .card.atout .lbl, .card.excuse .lbl{ position:absolute; bottom:5px; left:0; right:0;
+    text-align:center; font-size:.46rem; letter-spacing:.16em; opacity:.75; }
+  .card.excuse{ background:#101314; color:var(--neon); border:1px solid rgba(47,214,198,.7); }
+  .card.excuse .big{ font-size:1.9rem; text-shadow:0 0 12px rgba(47,214,198,.55); }
+  .card.dos{ background:repeating-linear-gradient(45deg, rgba(47,214,198,.18) 0 6px, transparent 6px 12px), #14110f;
+    border:1px solid rgba(47,214,198,.5); }
+
+  /* ---- ma main ---- */
+  .me{ margin-bottom:.4rem; }
+  .me .mh{ display:flex; justify-content:space-between; font-size:.62rem;
+    letter-spacing:.12em; text-transform:uppercase; color:var(--smoke); padding:0 .2rem .35rem; }
+  .me .mh .who{ color:var(--bone); }
+  .me .mh .who.preneur{ color:var(--sodium); }
+  .hand{ display:flex; justify-content:center; flex-wrap:wrap; row-gap:10px; padding-top:12px; }
+  .hand .card{ width:50px; height:72px; margin-left:-30px; transition:transform .14s ease, box-shadow .14s ease; }
+  .hand .card:first-child{ margin-left:0; }
+  .hand .card .big{ font-size:1.35rem; }
+  .hand .card.atout .big{ font-size:1.8rem; }
+  .hand .card.jouable{ cursor:pointer; }
+  .hand .card.jouable:hover{ transform:translateY(-10px); }
+  .hand .card.dim{ opacity:.32; }
+  .hand .card.sel{ transform:translateY(-14px);
+    box-shadow:0 0 0 2px var(--neon), 0 6px 16px rgba(0,0,0,.6); cursor:pointer; }
+  @keyframes shake{ 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+  .hand .card.nope{ animation:shake .25s ease; }
+
+  /* ---- barre d'action ---- */
+  .bar{ position:fixed; left:0; right:0; bottom:0; z-index:50;
+    background:linear-gradient(180deg, transparent, var(--ink) 26%);
+    padding:.9rem; display:flex; justify-content:center; }
+  .bar-inner{ width:min(560px,96vw); }
+  .prompt{ text-align:center; font-size:.78rem; color:var(--bone); margin-bottom:.6rem; min-height:1.15em; }
+  .prompt b{ color:var(--neon); }
+  .btns{ display:flex; gap:.45rem; flex-wrap:wrap; justify-content:center; }
+  button{ font-family:'Space Mono',monospace; font-weight:700; font-size:.74rem;
+    letter-spacing:.05em; text-transform:uppercase; cursor:pointer;
+    background:transparent; color:var(--bone);
+    border:1px solid rgba(232,226,214,.3); border-radius:10px;
+    padding:.75rem .8rem; flex:1 1 auto; min-width:84px; transition:all .15s ease; }
+  button:hover, button:focus-visible{ border-color:var(--neon); color:var(--neon); outline:none; }
+  button.go{ background:var(--neon); color:var(--ink); border-color:var(--neon); }
+  button:disabled{ opacity:.28; cursor:not-allowed; }
+  button:disabled:hover{ border-color:rgba(232,226,214,.3); color:var(--bone); }
+
+  /* ---- overlay / toast ---- */
+  .overlay{ position:fixed; inset:0; z-index:200; display:grid; place-items:center;
+    background:rgba(14,10,11,.93); text-align:center; padding:1.5rem; }
+  .overlay.hidden{ display:none; }
+  .overlay h2{ font-family:'Big Shoulders Display',sans-serif; font-weight:800;
+    font-size:2.2rem; text-transform:uppercase; color:var(--neon);
+    text-shadow:0 0 16px rgba(47,214,198,.4); margin-bottom:.6rem; line-height:.95; }
+  .overlay h2.chute{ color:var(--oxblood); text-shadow:0 0 16px rgba(181,48,42,.4); }
+  .overlay .panel{ max-width:34ch; margin:0 auto; }
+  .overlay p{ color:var(--smoke); font-size:.8rem; margin-bottom:1rem; }
+  .overlay p b{ color:var(--bone); }
+  .scoretab{ width:100%; border-collapse:collapse; margin:0 0 1.2rem; font-size:.74rem; }
+  .scoretab td{ padding:.3rem .4rem; border-bottom:1px solid rgba(232,226,214,.1); text-align:left; }
+  .scoretab td:nth-child(2), .scoretab td:nth-child(3){ text-align:right; font-weight:700; }
+  .pos{ color:var(--neon); } .negv{ color:var(--oxblood); }
+  #toast{ position:fixed; top:14px; left:50%; transform:translateX(-50%); z-index:300;
+    background:#1d1716; border:1px solid var(--sodium); color:var(--sodium);
+    font-size:.7rem; letter-spacing:.06em; padding:.55rem .9rem; border-radius:10px;
+    opacity:0; pointer-events:none; transition:opacity .25s ease; max-width:88vw; text-align:center; }
+  #toast.show{ opacity:1; }
+  @media (prefers-reduced-motion: reduce){ *{ animation:none!important; transition:none!important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>Tarot</h1>
+      <div class="sub">L'arrière-salle · toi contre 3</div>
+    </div>
+    <div class="right">donne n°<span id="dno">1</span><b id="cumul0">0</b><span>ton cumul</span></div>
+  </div>
+
+  <div class="opps" id="opps"></div>
+
+  <div class="table">
+    <div class="statline" id="statline">—</div>
+    <div class="trick" id="trick"></div>
+    <div class="chien" id="chien">
+      <div class="lbl">Le chien</div>
+      <div class="cards" id="chienCards"></div>
+    </div>
+  </div>
+
+  <div class="me">
+    <div class="mh">
+      <span class="who" id="meWho">Toi</span>
+      <span id="meInfo"></span>
+    </div>
+    <div class="hand" id="hand"></div>
+  </div>
+</div>
+
+<div class="bar"><div class="bar-inner">
+  <div class="prompt" id="prompt">—</div>
+  <div class="btns" id="btns"></div>
+</div></div>
+
+<div class="overlay" id="ov">
+  <div class="panel">
+    <h2 id="ovT">Tarot</h2>
+    <div id="ovBody"><p>Le vrai jeu : 78 cartes, enchères, chien, écart, Excuse, Petit au bout. Toi contre <b>Marcel</b>, <b>Simone</b> et <b>Le Vieux</b>. Le score se joue en points, donne après donne.</p></div>
+    <button class="go" id="ovBtn">Prendre place</button>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+/* ============================================================
+   TAROT CORE — règles du tarot français + bots
+   78 cartes, enchères (Petite/Garde/Sans/Contre), chien, écart,
+   obligation de fournir/couper/monter, Excuse, Petit au bout,
+   décompte officiel. Points stockés en demi-points x2 (entiers).
+   Testé en Node PUIS injecté tel quel dans le HTML.
+   ============================================================ */
+
+/* ---------- cartes ---------- */
+const SUITS = ['S','H','C','D'];                 // ♠ ♥ ♣ ♦
+function buildDeck(){
+  const d = [];
+  for (const s of SUITS) for (let r=1; r<=14; r++) d.push({s, r});
+  for (let r=1; r<=21; r++) d.push({s:'T', r});  // atouts
+  d.push({s:'X', r:0});                          // l'Excuse
+  return d;
+}
+function pts2(c){                                // points x2 (entiers)
+  if (c.s === 'X') return 9;
+  if (c.s === 'T') return (c.r===1 || c.r===21) ? 9 : 1;
+  return c.r===14 ? 9 : c.r===13 ? 7 : c.r===12 ? 5 : c.r===11 ? 3 : 1;
+}
+function isBout(c){ return c.s==='X' || (c.s==='T' && (c.r===1 || c.r===21)); }
+function sameCard(a,b){ return a.s===b.s && a.r===b.r; }
+function sortHand(h){
+  const o = {S:0,H:1,C:2,D:3,T:4,X:5};
+  return h.slice().sort((a,b)=> o[a.s]-o[b.s] || a.r-b.r);
+}
+
+/* ---------- aléa reproductible ---------- */
+function mulberry32(seed){
+  let a = seed>>>0;
+  return function(){
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a>>>15), 1 | a);
+    t = (t + Math.imul(t ^ (t>>>7), 61 | t)) ^ t;
+    return ((t ^ (t>>>14)) >>> 0) / 4294967296;
+  };
+}
+function shuffle(arr, rng){
+  const a = arr.slice();
+  for (let i=a.length-1; i>0; i--){
+    const j = Math.floor(rng()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+/* ---------- enchères ---------- */
+const CONTRATS = ['Passe','Petite','Garde','Garde sans','Garde contre'];
+const MULT = [0,1,2,4,6];
+
+function evalHand(hand){                          // force d'une main (heuristique)
+  const t = hand.filter(c=>c.s==='T');
+  let v = t.length*2.5;
+  const has = (s,r)=> hand.some(c=>c.s===s&&c.r===r);
+  if (has('T',21)) v += 9;
+  if (has('X',0))  v += 6;
+  if (has('T',1))  v += t.length>=7 ? 9 : t.length>=6 ? 6 : t.length>=5 ? 2 : -5;
+  v += t.filter(c=>c.r>=16).length * 2;
+  const coupeBonus = t.length>=4 ? 4 : 1;       // une coupe ne vaut qu'avec des atouts
+  for (const s of SUITS){
+    const cs = hand.filter(c=>c.s===s);
+    if (cs.some(c=>c.r===14)) v += 5;
+    if (cs.some(c=>c.r===13)) v += 2.5;
+    if (cs.some(c=>c.r===12)) v += 1;
+    if (cs.length===0) v += coupeBonus;
+    if (cs.length===1) v += coupeBonus/2;
+  }
+  return v;
+}
+function botBid(hand, best){
+  const v = evalHand(hand);
+  const want = v>=57 ? 4 : v>=50 ? 3 : v>=41 ? 2 : v>=34 ? 1 : 0;
+  return want > best ? want : 0;
+}
+
+/* ---------- écart ---------- */
+function ecartCounts(hand24){
+  // cartes écartables sans contrainte : couleurs hors rois
+  return hand24.filter(c => c.s!=='T' && c.s!=='X' && c.r!==14).length;
+}
+function canEcart(card, hand24, selected){
+  if (isBout(card)) return false;                       // jamais les bouts
+  if (card.s!=='T' && card.r===14) return false;        // jamais les rois
+  if (card.s==='T'){
+    const libres = ecartCounts(hand24);
+    const atoutsDejaPris = selected.filter(c=>c.s==='T').length;
+    return atoutsDejaPris < Math.max(0, 6 - libres);    // atouts seulement si forcé
+  }
+  return true;
+}
+function botEcart(hand24){
+  const sel = [];
+  const left = hand24.slice();
+  while (sel.length < 6){
+    // vider d'abord les couleurs les plus courtes (hors rois)
+    const cand = left.filter(c => canEcart(c, hand24, sel));
+    if (!cand.length) break;
+    const lens = {};
+    for (const s of SUITS) lens[s] = left.filter(c=>c.s===s && c.r!==14).length;
+    cand.sort((a,b)=>{
+      const la = a.s==='T' ? 99 : lens[a.s], lb = b.s==='T' ? 99 : lens[b.s];
+      return la-lb || pts2(a)-pts2(b) || a.r-b.r;
+    });
+    const pick = cand[0];
+    sel.push(pick);
+    left.splice(left.findIndex(c=>sameCard(c,pick)),1);
+  }
+  return sel;
+}
+
+/* ---------- règles de pli ---------- */
+function effLead(trick){
+  for (const t of trick) if (t.card.s!=='X') return t.card.s;
+  return null;
+}
+function bestTrumpIn(trick){
+  let m = 0;
+  for (const t of trick) if (t.card.s==='T' && t.card.r>m) m = t.card.r;
+  return m;
+}
+function legalMoves(hand, trick){
+  if (!trick.length) return hand.slice();
+  const lead = effLead(trick);
+  if (lead===null) return hand.slice();               // seule l'Excuse est tombée
+  const exc = hand.filter(c=>c.s==='X');
+  if (lead!=='T'){
+    const follow = hand.filter(c=>c.s===lead);
+    if (follow.length) return follow.concat(exc);
+  }
+  const trumps = hand.filter(c=>c.s==='T');
+  if (!trumps.length) return hand.slice();            // ni couleur ni atout : tout
+  const bt = bestTrumpIn(trick);
+  const higher = trumps.filter(c=>c.r>bt);
+  return (higher.length ? higher : trumps).concat(exc); // couper, monter si possible
+}
+function winnerOf(trick){                              // index DANS le pli
+  const bt = bestTrumpIn(trick);
+  let wi = -1, wv = -1;
+  if (bt>0){
+    trick.forEach((t,i)=>{ if (t.card.s==='T' && t.card.r>wv){ wv=t.card.r; wi=i; } });
+  } else {
+    const lead = effLead(trick);
+    trick.forEach((t,i)=>{ if (t.card.s===lead && t.card.r>wv){ wv=t.card.r; wi=i; } });
+  }
+  return wi;
+}
+
+/* ---------- une donne complète (pilotée par l'UI ou la simu) ---------- */
+function Donne(rng, dealer){
+  const deck = shuffle(buildDeck(), rng);
+  const D = {
+    dealer, phase:'bid',
+    hands: [0,1,2,3].map(i => sortHand(deck.slice(i*18,(i+1)*18))),
+    chien: deck.slice(72,78),
+    bids: [], turn: (dealer+1)%4, best: 0, bestSeat: -1,
+    taker: -1, contract: 0, ecart: [], ecartSide: null,
+    trick: [], leader: (dealer+1)%4, trickNo: 0,
+    pile2: {T:0, D:0},                 // points x2 par camp
+    pileN: {T:0, D:0},                 // nb de cartes par camp
+    boutsT: 0, pbCamp: null, excuseInfo: null,
+    result: null
+  };
+
+  D.camp = seat => seat===D.taker ? 'T' : 'D';
+
+  D.bid = function(level){
+    if (D.phase!=='bid') throw new Error('pas la phase enchères');
+    if (level!==0 && level<=D.best) throw new Error('enchère trop basse');
+    D.bids.push({seat:D.turn, level});
+    if (level>D.best){ D.best=level; D.bestSeat=D.turn; }
+    D.turn = (D.turn+1)%4;
+    if (D.bids.length===4){
+      if (D.best===0){ D.phase='dead'; return; }
+      D.taker = D.bestSeat; D.contract = D.best;
+      if (D.contract<=2){
+        D.hands[D.taker] = sortHand(D.hands[D.taker].concat(D.chien));
+        D.phase='ecart'; D.ecartSide='T';
+      } else {
+        D.ecart = D.chien.slice();
+        D.ecartSide = D.contract===3 ? 'T' : 'D';
+        startPlay();
+      }
+    }
+  };
+
+  D.doEcart = function(cards){
+    if (D.phase!=='ecart') throw new Error('pas la phase écart');
+    if (cards.length!==6) throw new Error('il faut 6 cartes');
+    const h = D.hands[D.taker];
+    const sel = [];
+    for (const c of cards){
+      if (!h.some(x=>sameCard(x,c))) throw new Error('carte absente de la main');
+      if (!canEcart(c, h, sel)) throw new Error('carte non écartable');
+      sel.push(c);
+    }
+    D.ecart = sel.slice();
+    D.hands[D.taker] = h.filter(x => !sel.some(c=>sameCard(c,x)));
+    startPlay();
+  };
+
+  function startPlay(){
+    D.phase='play';
+    D.turn = D.leader = (D.dealer+1)%4;
+  }
+
+  D.legalFor = function(seat){
+    if (D.phase!=='play' || seat!==D.turn) return [];
+    return legalMoves(D.hands[seat], D.trick);
+  };
+
+  D.partialWinnerSeat = function(){
+    if (!D.trick.length) return -1;
+    return D.trick[winnerOf(D.trick)].seat;
+  };
+
+  D.play = function(seat, card){
+    const legal = D.legalFor(seat);
+    if (!legal.some(c=>sameCard(c,card))) throw new Error('coup illégal');
+    D.hands[seat] = D.hands[seat].filter(c=>!sameCard(c,card));
+    D.trick.push({seat, card});
+    D.turn = (D.turn+1)%4;
+    if (D.trick.length===4) resolveTrick();
+  };
+
+  function resolveTrick(){
+    const wi = winnerOf(D.trick);
+    const wSeat = D.trick[wi].seat, wCamp = D.camp(wSeat);
+    const last = D.trickNo===17;
+    let info = {cards:D.trick.slice(), winner:wSeat, excuse:null, petit:false};
+
+    for (const t of D.trick){
+      if (t.card.s==='X' && !last){
+        const xCamp = D.camp(t.seat);            // l'Excuse reste à son camp
+        D.pile2[xCamp] += 9; D.pileN[xCamp]++;
+        if (xCamp!==wCamp){ D.pile2[xCamp]-=1; D.pile2[wCamp]+=1; } // échange 1/2 pt
+        if (xCamp==='T') D.boutsT++;
+        info.excuse = {seat:t.seat, kept:true};
+      } else {
+        D.pile2[wCamp] += pts2(t.card); D.pileN[wCamp]++;
+        if (isBout(t.card) && wCamp==='T') D.boutsT++;
+        if (t.card.s==='X') info.excuse = {seat:t.seat, kept:false};
+      }
+      if (last && t.card.s==='T' && t.card.r===1){
+        D.pbCamp = wCamp; info.petit = true;
+      }
+    }
+    D.lastTrick = info;
+    D.leader = D.turn = wSeat;
+    D.trick = [];
+    D.trickNo++;
+    if (D.trickNo===18) finish();
+  }
+
+  function finish(){
+    // l'écart (ou le chien) rejoint son camp
+    for (const c of D.ecart){
+      D.pile2[D.ecartSide] += pts2(c); D.pileN[D.ecartSide]++;
+      if (isBout(c) && D.ecartSide==='T') D.boutsT++;
+    }
+    const target2 = [112,102,82,72][D.boutsT];
+    const diff2 = D.pile2.T - target2;
+    const made = diff2>=0;
+    const base = 25 + Math.ceil(Math.abs(diff2)/2);
+    const pb = D.pbCamp===null ? 0 : (D.pbCamp==='T' ? 10 : -10);
+    const mult = MULT[D.contract];
+    const d = (made?1:-1)*base*mult + pb*mult;
+    const perSeat = [0,0,0,0].map((_,i)=> i===D.taker ? 3*d : -d);
+    D.result = {
+      made, pts2:D.pile2.T, target2, bouts:D.boutsT,
+      base, pb, mult, d, perSeat,
+      contractName: CONTRATS[D.contract]
+    };
+    D.phase='done';
+  }
+
+  return D;
+}
+
+/* ---------- bot de jeu de carte ---------- */
+function wouldWin(card, trick){
+  if (card.s==='X') return false;
+  const bt = bestTrumpIn(trick);
+  if (card.s==='T') return card.r > bt;
+  if (bt>0) return false;
+  const lead = effLead(trick);
+  if (lead===null) return true;
+  if (card.s!==lead) return false;
+  let m = 0;
+  for (const t of trick) if (t.card.s===lead && t.card.r>m) m = t.card.r;
+  return card.r > m;
+}
+function botPlay(D, seat){
+  const legal = D.legalFor(seat);
+  if (legal.length===1) return legal[0];
+  const iTk = seat===D.taker;
+  const real = legal.filter(c=>c.s!=='X');
+  const pool = (D.trickNo===17 && real.length) ? real : legal;  // pas d'Excuse au dernier pli
+  const byR = a => a.slice().sort((x,y)=>x.r-y.r);
+  const dumpScore = c =>
+    pts2(c)*10 + c.r + (c.s==='T'&&c.r===1 ? 500 : 0) +
+    (c.s==='X' ? (D.trickNo>=14 ? 400 : 60) : 0) + (c.s==='T'&&c.r===21 ? 90 : 0);
+
+  if (!D.trick.length){                       // j'entame
+    const kings = real.filter(c=>c.s!=='T' && c.r===14);
+    const suitsC = real.filter(c=>c.s!=='T' && c.s!=='X');
+    const trumps = real.filter(c=>c.s==='T');
+    const lens = {};
+    for (const c of suitsC) lens[c.s]=(lens[c.s]||0)+1;
+    if (iTk){
+      // métier de preneur : tirer les atouts tant qu'on en a la force
+      const hasPetit = trumps.some(c=>c.r===1);
+      const pullMin = hasPetit ? 7 : 6;        // avec le Petit, garder des escortes
+      if (trumps.length>=pullMin && trumps.some(c=>c.r>=19))
+        return byR(trumps)[trumps.length-1];
+      if (kings.length) return kings[0];
+      if (suitsC.length){                     // se créer des coupes : la plus courte
+        const short = Object.keys(lens).sort((a,b)=>lens[a]-lens[b])[0];
+        return byR(suitsC.filter(c=>c.s===short))[0];
+      }
+    } else {
+      if (kings.length) return kings[0];
+      if (suitsC.length){                     // défense : la plus longue, petit
+        const long = Object.keys(lens).sort((a,b)=>lens[b]-lens[a])[0];
+        return byR(suitsC.filter(c=>c.s===long))[0];
+      }
+    }
+    const safe = trumps.filter(c=>c.r!==1);
+    return byR(safe.length?safe:trumps)[0];
+  }
+
+  const wSeat = D.partialWinnerSeat();
+  const myCampWinning = (wSeat===D.taker) === iTk;
+  const lastToPlay = D.trick.length===3;
+
+  if (myCampWinning){
+    const nonWin = pool.filter(c=>!wouldWin(c,D.trick));
+    if (nonWin.length){
+      if (!iTk && lastToPlay){                 // je charge (dames et moins, pas les rois)
+        const ch = nonWin.filter(c=>pts2(c)<=7 && c.s!=='X' && !(c.s==='T'&&c.r===1));
+        if (ch.length) return ch.sort((a,b)=>pts2(b)-pts2(a)||a.r-b.r)[0];
+      }
+      return nonWin.slice().sort((a,b)=>dumpScore(a)-dumpScore(b))[0];
+    }
+    return byR(pool.filter(c=>c.s!=='X')).concat(pool)[0];
+  }
+
+  const winners = pool.filter(c=>wouldWin(c,D.trick));
+  if (winners.length){
+    let w = byR(winners)[0];
+    if (w.s==='T' && w.r===1 && !lastToPlay){  // je protège le Petit
+      const alt = winners.filter(c=>!(c.s==='T'&&c.r===1));
+      if (alt.length) w = byR(alt)[0];
+      else return pool.slice().sort((a,b)=>dumpScore(a)-dumpScore(b))[0];
+    }
+    return w;
+  }
+  return pool.slice().sort((a,b)=>dumpScore(a)-dumpScore(b))[0];
+}
+
+/* ---------- export ---------- */
+const TarotCore = {
+  buildDeck, pts2, isBout, sameCard, sortHand, shuffle, mulberry32,
+  CONTRATS, MULT, evalHand, botBid, botEcart, canEcart, ecartCounts,
+  legalMoves, effLead, bestTrumpIn, winnerOf, wouldWin, botPlay, Donne, SUITS
+};
+if (typeof module !== 'undefined') module.exports = TarotCore;
+if (typeof window !== 'undefined') window.TarotCore = TarotCore;
+
+</script>
+<script>
+/* =================== RÉGLAGES ===================   <<< CHANGE ICI */
+const REGLAGES = {
+  NOMS: ['Toi','Marcel','Simone','Le Vieux'],   // toi puis les 3 bots
+  TEMPO: 620                                    // vitesse des bots (ms)
+};
+
+/* =================== MISE EN PLACE =================== */
+const T = TarotCore;
+const NOMS = REGLAGES.NOMS;
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+const SUIT_GLYPH = {S:'♠',H:'♥',C:'♣',D:'♦'};
+const RANK_TXT = r => r===14?'R':r===13?'D':r===12?'C':r===11?'V':String(r);
+
+let D=null, donneNo=0, dealer=3, cumul=[0,0,0,0];
+let uiTrick=[], lastShown=null, ecartSel=[], waitingHuman=null;
+
+/* ---- fabrique de cartes ---- */
+function cardEl(c, small){
+  const el = document.createElement('div');
+  if (c===null){ el.className='card dos'; return el; }
+  if (c.s==='X'){
+    el.className='card excuse';
+    el.innerHTML = '<span class="big">★</span><span class="lbl">EXCUSE</span>';
+  } else if (c.s==='T'){
+    el.className='card atout';
+    el.innerHTML = '<span class="big">'+c.r+'</span><span class="lbl">ATOUT</span>';
+  } else {
+    const red = (c.s==='H'||c.s==='D');
+    el.className='card'+(red?' red':'');
+    el.innerHTML = '<span class="r">'+RANK_TXT(c.r)+'\n'+SUIT_GLYPH[c.s]+'</span>'+
+                   '<span class="big">'+SUIT_GLYPH[c.s]+'</span>';
+  }
+  el.dataset.id = c.s+'_'+c.r;
+  return el;
+}
+
+/* ---- rendu ---- */
+function renderOpps(){
+  const box = $('opps'); box.innerHTML='';
+  for (let i=1;i<4;i++){
+    const d = document.createElement('div');
+    d.className = 'opp' + (D && D.taker===i ? ' preneur':'') +
+      (D && (D.phase==='bid'||D.phase==='play') && D.turn===i ? ' turn':'');
+    const n = D ? D.hands[i].length : 18;
+    let backs=''; for(let k=0;k<Math.min(n,12);k++) backs+='<i></i>';
+    d.innerHTML = '<span class="nm">'+NOMS[i]+'</span><span class="cnt">'+n+'</span>'+
+      '<div class="backs">'+backs+'</div><div class="bub" id="bub'+i+'"></div>';
+    box.appendChild(d);
+  }
+}
+function renderTrick(){
+  const tr = $('trick'); tr.innerHTML='';
+  const pos = ['s','w','n','e'];                 // toi en bas, puis sens du jeu
+  const cards = lastShown ? lastShown.cards : uiTrick;
+  for (let seat=0; seat<4; seat++){
+    const slot = document.createElement('div');
+    slot.className = 'slot slot-'+pos[seat];
+    const played = cards.find(t=>t.seat===seat);
+    if (played){
+      slot.appendChild(cardEl(played.card));
+      if (lastShown && lastShown.winner===seat) slot.classList.add('win');
+    } else slot.innerHTML = '<div class="ph"></div>';
+    slot.innerHTML += '<div class="tag">'+NOMS[seat]+'</div>';
+    tr.appendChild(slot);
+  }
+}
+function renderHand(){
+  const h = $('hand'); h.innerHTML='';
+  if (!D) return;
+  const mine = D.hands[0];
+  const myTurn = D.phase==='play' && D.turn===0 && waitingHuman==='play';
+  const legal = myTurn ? D.legalFor(0) : [];
+  for (const c of mine){
+    const el = cardEl(c);
+    if (waitingHuman==='ecart'){
+      el.classList.add('jouable');
+      if (ecartSel.some(x=>T.sameCard(x,c))) el.classList.add('sel');
+      el.onclick = ()=> toggleEcart(c, el);
+    } else if (myTurn){
+      if (legal.some(x=>T.sameCard(x,c))){
+        el.classList.add('jouable');
+        el.onclick = ()=> humanPlays(c);
+      } else el.classList.add('dim');
+    }
+    h.appendChild(el);
+  }
+  $('meWho').textContent = NOMS[0] + (D.taker===0 ? '' : (D.taker>=0 ? ' · défense':''));
+  $('meWho').className = 'who' + (D.taker===0 ? ' preneur':'');
+  $('meInfo').textContent = D.taker===0 && D.taker>=0 ? 'PRENEUR' : '';
+}
+function renderStat(){
+  if (!D || D.taker<0){ $('statline').textContent='Enchères en cours…'; return; }
+  $('statline').innerHTML = 'Preneur : <b>'+NOMS[D.taker]+'</b> · '+T.CONTRATS[D.contract]+
+    (D.phase==='play'||D.phase==='done' ? ' · pli '+Math.min(D.trickNo+1,18)+'/18 · bouts preneur : '+D.boutsT : '');
+}
+function render(){
+  renderOpps(); renderTrick(); renderHand(); renderStat();
+  $('dno').textContent = donneNo;
+  $('cumul0').textContent = cumul[0];
+}
+function bubble(seat, txt){ if(seat>0){ const b=$('bub'+seat); if(b) b.textContent=txt; } }
+function setPrompt(t){ $('prompt').innerHTML = t; }
+function setBtns(html){ $('btns').innerHTML = html; }
+let toastTimer=null;
+function toast(t, long){
+  const el=$('toast'); el.textContent=t; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'), long?2600:1700);
+}
+
+/* =================== DÉROULÉ D'UNE DONNE =================== */
+async function newDonne(){
+  D = T.Donne(Math.random, dealer);
+  donneNo++;
+  uiTrick=[]; lastShown=null; ecartSel=[]; waitingHuman=null;
+  $('chien').classList.remove('show');
+  render();
+  setPrompt('La donne n°'+donneNo+' commence — '+NOMS[(dealer+1)%4]+' parle en premier.');
+  setBtns('');
+  await sleep(700);
+  bidLoop();
+}
+
+async function bidLoop(){
+  while (D.phase==='bid'){
+    const s = D.turn;
+    render();
+    if (s===0){
+      waitingHuman='bid';
+      setPrompt('À toi de parler. Enchère en cours : <b>'+(D.best?T.CONTRATS[D.best]:'aucune')+'</b>');
+      let html = '<button onclick="humanBid(0)">Passe</button>';
+      for (let l=1;l<=4;l++)
+        html += '<button '+(l<=D.best?'disabled':'')+' onclick="humanBid('+l+')">'+T.CONTRATS[l]+'</button>';
+      setBtns(html);
+      return;                                    // reprise dans humanBid()
+    }
+    setPrompt(NOMS[s]+' réfléchit…');
+    await sleep(REGLAGES.TEMPO);
+    const b = T.botBid(D.hands[s], D.best);
+    D.bid(b);
+    bubble(s, b===0?'passe':T.CONTRATS[b]);
+  }
+  afterBids();
+}
+function humanBid(level){
+  if (waitingHuman!=='bid') return;
+  waitingHuman=null; setBtns('');
+  D.bid(level);
+  setPrompt(level===0 ? 'Tu passes.' : 'Tu annonces : <b>'+T.CONTRATS[level]+'</b>');
+  bidLoop();
+}
+
+async function afterBids(){
+  render();
+  if (D.phase==='dead'){
+    toast('Tout le monde passe — on redonne.');
+    dealer=(dealer+1)%4;
+    await sleep(1100);
+    return newDonne();
+  }
+  toast(NOMS[D.taker]+' prend : '+T.CONTRATS[D.contract], true);
+  await sleep(900);
+
+  if (D.phase==='ecart'){
+    if (D.contract<=2){                         // le chien se montre à tous
+      $('chienCards').innerHTML='';
+      for (const c of D.chien) $('chienCards').appendChild(cardEl(c));
+      $('chien').classList.add('show');
+      setPrompt('Le chien est retourné.');
+      await sleep(2100);
+      $('chien').classList.remove('show');
+    }
+    if (D.taker===0){
+      render();
+      waitingHuman='ecart'; ecartSel=[];
+      setPrompt('Fais ton écart : choisis <b>6 cartes</b> à mettre de côté (elles compteront pour toi).');
+      setBtns('<button class="go" id="okEcart" disabled onclick="confirmEcart()">Valider l\'écart (0/6)</button>');
+      renderHand();
+      return;
+    }
+    setPrompt(NOMS[D.taker]+' fait son écart…');
+    await sleep(1400);
+    D.doEcart(T.botEcart(D.hands[D.taker]));
+  } else {
+    toast(D.contract===3 ? 'Garde sans le chien — il comptera pour le preneur.'
+                         : 'Garde contre le chien — il comptera pour la défense.', true);
+    await sleep(800);
+  }
+  playLoop();
+}
+
+function toggleEcart(c, el){
+  const i = ecartSel.findIndex(x=>T.sameCard(x,c));
+  if (i>=0){ ecartSel.splice(i,1); }
+  else {
+    if (ecartSel.length>=6){ el.classList.add('nope'); setTimeout(()=>el.classList.remove('nope'),300); return; }
+    if (!T.canEcart(c, D.hands[0], ecartSel)){
+      el.classList.add('nope'); setTimeout(()=>el.classList.remove('nope'),300);
+      toast(T.isBout(c) ? 'Les bouts ne s\'écartent jamais.' :
+            (c.s!=='T'&&c.r===14) ? 'Les rois ne s\'écartent jamais.' :
+            'Un atout à l\'écart, seulement si tu n\'as pas le choix.');
+      return;
+    }
+    ecartSel.push(c);
+  }
+  renderHand();
+  const ok = $('okEcart');
+  if (ok){ ok.disabled = ecartSel.length!==6;
+    ok.textContent = 'Valider l\'écart ('+ecartSel.length+'/6)'; }
+}
+function confirmEcart(){
+  if (waitingHuman!=='ecart' || ecartSel.length!==6) return;
+  waitingHuman=null;
+  D.doEcart(ecartSel.slice());
+  ecartSel=[];
+  setBtns('');
+  toast('Écart fait — ces 6 cartes compteront dans tes points.');
+  playLoop();
+}
+
+async function playLoop(){
+  render();
+  while (D.phase==='play'){
+    const s = D.turn;
+    render();
+    if (s===0){
+      waitingHuman='play';
+      setPrompt('<b>À toi.</b> Les cartes éteintes sont interdites (fournir, couper, monter).');
+      setBtns('');
+      renderHand();
+      return;                                   // reprise dans humanPlays()
+    }
+    setPrompt(NOMS[s]+' joue…');
+    await sleep(REGLAGES.TEMPO);
+    await playCard(s, T.botPlay(D, s));
+  }
+  if (D.phase==='done') showScore();
+}
+async function humanPlays(c){
+  if (waitingHuman!=='play') return;
+  waitingHuman=null;
+  await playCard(0, c);
+  playLoop();
+}
+async function playCard(seat, card){
+  const completes = D.trick.length===3;
+  D.play(seat, card);
+  if (!completes){
+    uiTrick = D.trick.slice();
+    render();
+  } else {
+    lastShown = D.lastTrick;
+    uiTrick = [];
+    render();
+    setPrompt('Pli pour <b>'+NOMS[lastShown.winner]+'</b>.');
+    if (lastShown.petit) toast('PETIT AU BOUT !', true);
+    else if (lastShown.excuse && lastShown.excuse.kept===false && D.trickNo===18)
+      toast('L\'Excuse au dernier pli est perdue…');
+    await sleep(1150);
+    lastShown=null;
+    render();
+  }
+}
+
+/* ---- feuille de score ---- */
+function showScore(){
+  const R = D.result;
+  for (let i=0;i<4;i++) cumul[i]+=R.perSeat[i];
+  const iWon = R.perSeat[0]>0;
+  $('ovT').textContent = R.made ? (D.taker===0?'Contrat gagné':'Le preneur passe')
+                                : (D.taker===0?'Chuté.':'Défense gagnante');
+  $('ovT').className = iWon ? '' : 'chute';
+  let html = '<p><b>'+NOMS[D.taker]+'</b> en <b>'+R.contractName+'</b> (×'+R.mult+') : '+
+    '<b>'+(R.pts2/2)+'</b> points pour <b>'+(R.target2/2)+'</b> demandés ('+R.bouts+' bout'+(R.bouts>1?'s':'')+').'+
+    (R.pb!==0 ? '<br>Petit au bout : '+(R.pb>0?'+10 pour le preneur.':'−10, pour la défense.') : '')+'</p>';
+  html += '<table class="scoretab">';
+  for (let i=0;i<4;i++){
+    const v=R.perSeat[i];
+    html += '<tr><td>'+NOMS[i]+(i===D.taker?' ·P':'')+'</td>'+
+      '<td class="'+(v>=0?'pos':'negv')+'">'+(v>0?'+':'')+v+'</td>'+
+      '<td>'+(cumul[i]>0?'+':'')+cumul[i]+'</td></tr>';
+  }
+  html += '</table>';
+  $('ovBody').innerHTML = html;
+  $('ovBtn').textContent = 'Donne suivante';
+  $('ov').classList.remove('hidden');
+  render();
+}
+
+$('ovBtn').addEventListener('click', ()=>{
+  $('ov').classList.add('hidden');
+  if (D && D.phase==='done') dealer=(dealer+1)%4;
+  newDonne();
+});
+
+render();
+setPrompt('—');
+</script>
+</body>
+</html>

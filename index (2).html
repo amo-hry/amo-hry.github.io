@@ -1,0 +1,564 @@
+<!-- ============================================================
+     L'ARRIÈRE-SALLE — page d'accueil
+     Bannière : grande scène ASCII colorée (château + cascade),
+     calculée en direct. En dessous : tous les liens vers les
+     jeux, les démos et les pièces ASCII.
+     Tout est en fichiers séparés dans le même dossier : les
+     liens marchent tels quels (en local ou sur GitHub Pages).
+     À régler en premier :  <<< CHANGE ICI  (dans le script)
+     ============================================================ -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L'arrière-salle</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Press+Start+2P&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{ --ink:#0E0A0B; --bone:#E8E2D6; --smoke:#8A8079;
+         --neon:#2FD6C6; --oxblood:#E0392F; --sodium:#E9A23B; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html{ scroll-behavior:smooth; }
+  body{
+    background:var(--ink); color:var(--bone);
+    font-family:'Space Mono',monospace; line-height:1.5;
+    -webkit-tap-highlight-color:transparent;
+    background-image:
+      radial-gradient(70vw 50vw at 80% -10%, rgba(233,162,59,.07), transparent 60%),
+      radial-gradient(60vw 50vw at -10% 110%, rgba(47,214,198,.06), transparent 60%);
+  }
+  body::after{
+    content:""; position:fixed; inset:0; z-index:999; pointer-events:none;
+    opacity:.2; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ---------- bannière ---------- */
+  .banner{ position:relative; width:100%; height:62vh; min-height:340px; max-height:620px;
+    overflow:hidden; border-bottom:2px solid rgba(232,226,214,.12); }
+  #scene{ display:block; width:100%; height:100%; image-rendering:pixelated;
+    background:linear-gradient(180deg,#1a1a40,#3a2a6a 40%,#7a3a7a 60%,#c0506a 74%,#2070c0 74%,#1a4a90 100%); }
+  .banner .veil{ position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 30%, transparent 40%, rgba(14,10,11,.55) 100%); }
+  .title{ position:absolute; left:0; right:0; bottom:7%; text-align:center; pointer-events:none; padding:0 1rem; }
+  .title h1{ font-family:'Big Shoulders Display',sans-serif; font-weight:800;
+    font-size:clamp(2.4rem,9vw,6rem); line-height:.85; letter-spacing:.02em;
+    color:var(--bone); text-shadow:0 2px 0 rgba(14,10,11,.6), 0 0 30px rgba(233,162,59,.4); }
+  .title h1 .or{ color:var(--sodium); text-shadow:0 0 28px rgba(233,162,59,.7); }
+  .title .tag{ margin-top:.7rem; font-size:clamp(.55rem,1.6vw,.8rem);
+    letter-spacing:.35em; text-transform:uppercase; color:var(--bone);
+    text-shadow:0 1px 6px rgba(14,10,11,.9); }
+  .scrolldown{ position:absolute; left:50%; bottom:1.4rem; transform:translateX(-50%);
+    font-family:'Press Start 2P',monospace; font-size:.55rem; color:var(--neon);
+    text-shadow:0 0 8px rgba(47,214,198,.6); animation:bob 1.8s ease-in-out infinite; pointer-events:none; }
+  @keyframes bob{ 0%,100%{ transform:translate(-50%,0); } 50%{ transform:translate(-50%,6px); } }
+
+  /* ---------- contenu ---------- */
+  .wrap{ width:min(1100px,94vw); margin:0 auto; padding:3rem 0 4rem; }
+  .intro{ text-align:center; max-width:60ch; margin:0 auto 2.6rem; color:var(--smoke);
+    font-size:.95rem; }
+  .intro b{ color:var(--bone); }
+
+  .section{ margin-bottom:3rem; }
+  .section h2{ font-family:'Press Start 2P',monospace; font-size:.95rem;
+    color:var(--neon); text-shadow:2px 2px 0 rgba(47,214,198,.22); margin-bottom:.4rem; }
+  .section .sh-sub{ font-size:.62rem; letter-spacing:.2em; text-transform:uppercase;
+    color:var(--smoke); margin-bottom:1.4rem; }
+
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:1rem; }
+
+  .card{ display:block; text-decoration:none; color:inherit; position:relative;
+    background:#13110f; border:1px solid rgba(232,226,214,.12); border-radius:12px;
+    padding:1.1rem 1.1rem 1rem; overflow:hidden; transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
+  .card::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
+    background:var(--accent,var(--neon)); opacity:.8; }
+  .card:hover{ transform:translateY(-3px); border-color:var(--accent,var(--neon));
+    box-shadow:0 8px 24px rgba(0,0,0,.5), 0 0 18px -6px var(--accent,var(--neon)); }
+  .card .ico{ font-family:'Press Start 2P',monospace; font-size:1.1rem;
+    color:var(--accent,var(--neon)); margin-bottom:.7rem; display:block; }
+  .card h3{ font-family:'Big Shoulders Display',sans-serif; font-weight:800;
+    font-size:1.35rem; text-transform:uppercase; line-height:.95; margin-bottom:.35rem; color:var(--bone); }
+  .card p{ font-size:.74rem; color:var(--smoke); line-height:1.45; }
+  .card .tags{ margin-top:.7rem; display:flex; gap:.35rem; flex-wrap:wrap; }
+  .card .tags span{ font-size:.54rem; letter-spacing:.05em; text-transform:uppercase;
+    color:var(--smoke); border:1px solid rgba(232,226,214,.16); border-radius:5px; padding:.15rem .4rem; }
+  .card .go{ position:absolute; right:1rem; bottom:.9rem; font-size:.7rem; color:var(--accent,var(--neon));
+    opacity:0; transition:opacity .15s ease; }
+  .card:hover .go{ opacity:1; }
+
+  footer{ border-top:1px solid rgba(232,226,214,.1); padding:2.2rem 0 3rem; text-align:center; }
+  footer .clock{ font-family:'Press Start 2P',monospace; font-size:1.1rem; color:var(--sodium);
+    text-shadow:0 0 10px rgba(233,162,59,.4); margin-bottom:.6rem; }
+  footer p{ color:var(--smoke); font-size:.7rem; letter-spacing:.05em; }
+  footer .neon{ color:var(--neon); }
+  @media (prefers-reduced-motion: reduce){ .scrolldown{ animation:none; } }
+</style>
+</head>
+<body>
+
+  <div class="banner">
+    <canvas id="scene"></canvas>
+    <div class="veil"></div>
+    <div class="title">
+      <h1>L'ARRIÈRE-<span class="or">SALLE</span></h1>
+      <div class="tag">jeux · démos · ascii · après minuit</div>
+    </div>
+    <div class="scrolldown">▼ ENTRER ▼</div>
+  </div>
+
+  <div class="wrap">
+    <p class="intro">Bienvenue dans l'arrière-salle. Tout ici est <b>fait maison</b> et tient dans un seul fichier — des jeux jouables au téléphone, des démos calculées en temps réel, des pièces ASCII contemplatives. Sers-toi.</p>
+
+    <div class="section">
+      <h2>LES JEUX</h2>
+      <div class="sh-sub">arcade · cartes · pilotage</div>
+      <div class="grid" id="gridJeux"></div>
+    </div>
+
+    <div class="section">
+      <h2>BARAQUE FORAINE</h2>
+      <div class="sh-sub">tir · pêche · lots</div>
+      <div class="grid" id="gridForaine"></div>
+    </div>
+
+    <div class="section">
+      <h2>DÉMOS &amp; ASCII</h2>
+      <div class="sh-sub">temps réel · géométrie · contemplation</div>
+      <div class="grid" id="gridAscii"></div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="clock" id="clock">--:--:--</div>
+    <p>L'arrière-salle ne dort jamais · <span class="neon">tout est calculé en direct</span></p>
+  </footer>
+
+<script>
+/* ============================================================
+   CHATEAU CORE — scène ASCII très colorée (château + cascade)
+   Bannière animée pour la page d'accueil de L'arrière-salle.
+   Tout est calculé en direct : ciel dégradé + soleil, nuages qui
+   dérivent, étoiles, falaise, château (tours, créneaux, fenêtres
+   qui scintillent, drapeaux au vent), une CASCADE qui dévale la
+   falaise, un bassin qui miroite, premier plan végétal.
+   Sortie : grille { ch, col } colorée. Testable en Node.
+   ============================================================ */
+function ChateauCore(opts){
+  opts = opts || {};
+
+  /* ---------- palette TRÈS colorée ---------- */
+  const PAL = {
+    // ciel (du haut vers l'horizon : nuit -> aube -> couchant)
+    ciel:['#1a1a40','#3a2a6a','#7a3a7a','#c0506a','#e98050','#f0a85a'],
+    soleil:'#FFE45A', soleilCoeur:'#FFF4C0', rayon:'#FFC850',
+    nuage:['#f5d0e0','#e8a0c0','#c080a0'],
+    etoile:'#FFFFFF',
+    // château : pierre dorée éclairée, ombres, toits bleus
+    mur:'#d8a860', murOmbre:'#8a6838', murClair:'#f0d090',
+    creneau:'#c09850', toit:'#3a7ad0', toitClair:'#5a9af0',
+    fenetre:'#FF9020', fenetreVive:'#FFD060', porte:'#5a3a20',
+    drapeauR:'#E0392F', drapeauB:'#2F8FD6', drapeauJ:'#E9A23B',
+    torche:'#FF7020',
+    // falaise / rocher
+    roche:'#7a6a5a', rocheOmbre:'#4a3e34', mousse:'#4a8a4a',
+    // eau
+    cascade:['#FFFFFF','#C0F0FF','#70D0F0','#40A0E0'],
+    bassin:['#2070C0','#3090E0','#50B0F0'], ecume:'#E8F8FF',
+    // végétation premier plan
+    herbe:['#3a8a3a','#4aaa4a','#2a6a2a'], arbre:'#2a7a3a', tronc:'#6a4a2a'
+  };
+
+  /* ---------- outils ---------- */
+  function mulberry32(seed){
+    let a=seed>>>0;
+    return function(){ a|=0; a=(a+0x6D2B79F5)|0;
+      let t=Math.imul(a^(a>>>15),1|a); t=(t+Math.imul(t^(t>>>7),61|t))^t;
+      return ((t^(t>>>14))>>>0)/4294967296; };
+  }
+  const SIN=new Float32Array(2048);
+  for(let i=0;i<2048;i++) SIN[i]=Math.sin(i/2048*Math.PI*2);
+  const K=2048/(Math.PI*2);
+  const sinT=x=>SIN[((x*K+2097152)|0)&2047];
+
+  /* ---------- grille ---------- */
+  function makeGrid(cols, rows){
+    const n=cols*rows;
+    return { cols, rows, ch:new Array(n).fill(' '), col:new Array(n).fill(null) };
+  }
+  function put(g,x,y,ch,col){
+    x|=0; y|=0;
+    if(x<0||y<0||x>=g.cols||y>=g.rows) return;
+    const i=y*g.cols+x; g.ch[i]=ch; g.col[i]=col;
+  }
+  function get(g,x,y){ if(x<0||y<0||x>=g.cols||y>=g.rows) return ' '; return g.ch[y*g.cols+x]; }
+
+  /* ---------- disposition de la scène (adaptée à la taille) ---------- */
+  function layout(cols, rows){
+    const horizon = Math.round(rows*0.74);        // ligne d'eau
+    const ledge = Math.round(rows*0.46);          // haut de la falaise (base du château)
+    const cliffX0 = Math.round(cols*0.30);        // la falaise occupe une bande centrale-gauche
+    const cliffX1 = Math.round(cols*0.66);
+    const fallX0 = Math.round(cols*0.44);         // la cascade dévale ici
+    const fallX1 = Math.round(cols*0.56);
+    // château posé sur la corniche, centré sur la falaise
+    const castle = {
+      x0: cliffX0+1, x1: cliffX1-1, baseY: ledge,
+      tours:[ {x:cliffX0+2, h:Math.round(rows*0.22), w:4},
+              {x:Math.round((cliffX0+cliffX1)/2)-2, h:Math.round(rows*0.30), w:5},
+              {x:cliffX1-5, h:Math.round(rows*0.24), w:4} ]
+    };
+    return { horizon, ledge, cliffX0, cliffX1, fallX0, fallX1, castle };
+  }
+
+  /* ---------- état ---------- */
+  function makeState(cols, rows, seed){
+    const rng=mulberry32(seed||7);
+    const L=layout(cols,rows);
+    const stars=[];
+    for(let i=0;i<Math.round(cols*rows*0.02);i++)
+      stars.push({x:rng()*cols|0, y:rng()*L.ledge*0.7|0, ph:rng()*6.28, sp:0.5+rng()*1.6});
+    const clouds=[];
+    for(let i=0;i<Math.max(2,Math.round(cols/22));i++)
+      clouds.push({x:rng()*cols, y:2+rng()*(L.ledge*0.5), w:4+rng()*7, sp:0.3+rng()*0.7, c:(rng()*3)|0});
+    const birds=[];
+    for(let i=0;i<Math.max(2,Math.round(cols/40));i++)
+      birds.push({x:rng()*cols, y:Math.round(rows*0.12+rng()*rows*0.15), sp:2+rng()*3, ph:rng()*6.28, dir:rng()<.5?1:-1});
+    // gouttes de la cascade (positions de flux qui défilent)
+    return { L, stars, clouds, birds, rng, cols, rows };
+  }
+
+  /* ---------- rendu ---------- */
+  function render(state, t){
+    const g=makeGrid(state.cols, state.rows);
+    const L=state.L, cols=state.cols, rows=state.rows;
+
+    /* --- ciel dégradé --- */
+    for(let y=0;y<L.horizon;y++){
+      const u=y/L.horizon;
+      const ci=Math.min(PAL.ciel.length-1, Math.floor(u*PAL.ciel.length));
+      const c=PAL.ciel[ci];
+      for(let x=0;x<cols;x++){ const i=y*cols+x; g.ch[i]=' '; g.col[i]=c; }
+    }
+
+    /* --- étoiles (scintillent, en haut) --- */
+    for(const s of state.stars){
+      const tw=0.5+0.5*sinT(t*s.sp+s.ph);
+      if(tw>0.62 && s.y<L.ledge*0.7){
+        put(g, s.x, s.y, tw>0.88?'*':(tw>0.74?'+':'.'), PAL.etoile);
+      }
+    }
+
+    /* --- soleil + rayons (en haut à droite) --- */
+    const sx=Math.round(cols*0.82), sy=Math.round(rows*0.16);
+    const R=Math.max(2, Math.round(Math.min(cols,rows*2)*0.045));
+    const pulse=1+sinT(t*1.0)*0.1;
+    for(let k=0;k<10;k++){
+      const a=k/10*Math.PI*2 + t*0.15;
+      const len=R*(1.8+sinT(t*2+k)*0.4);
+      for(let s=R*1.1;s<len*pulse;s+=0.8){
+        const x=Math.round(sx+Math.cos(a)*s), y=Math.round(sy+Math.sin(a)*s*0.5);
+        if(get(g,x,y)===' ') put(g,x,y, Math.abs(Math.cos(a))>0.7?'-':(Math.cos(a)*Math.sin(a)>0?'\\':'/'), PAL.rayon);
+      }
+    }
+    for(let dy=-R;dy<=R;dy++) for(let dx=-R*2;dx<=R*2;dx++){
+      const d=Math.sqrt(dx*dx+(dy*2)*(dy*2));
+      if(d<=R*pulse) put(g, sx+dx, sy+dy, d<R*0.5?'@':(d<R*0.8?'%':'#'), d<R*0.5?PAL.soleilCoeur:PAL.soleil);
+    }
+
+    /* --- nuages (dérivent, rose/violet) --- */
+    for(const c of state.clouds){
+      const cx=((c.x + t*c.sp)%(cols+c.w*2))-c.w;
+      const col=PAL.nuage[c.c];
+      for(let dy=-1;dy<=1;dy++) for(let dx=-c.w;dx<=c.w;dx++){
+        const d=Math.abs(dx)/c.w + Math.abs(dy)/1.6;
+        if(d<=1){
+          const x=Math.round(cx+dx), y=Math.round(c.y+dy);
+          if(y<L.ledge-1){
+            const dense=1-d;
+            put(g,x,y, dense>0.66?'@':(dense>0.33?'o':'.'), dy>0?PAL.nuage[2]:col);
+          }
+        }
+      }
+    }
+
+    /* --- oiseaux --- */
+    for(const b of state.birds){
+      const bx=((b.x+b.dir*t*b.sp)%(cols+8)+cols+8)%(cols+8)-4;
+      const by=b.y+sinT(t*0.6+b.ph)*2;
+      put(g, Math.round(bx), Math.round(by), sinT(t*8+b.ph)>0?'v':'~', '#3a2a4a');
+    }
+
+    /* --- la falaise (rocher sous la corniche) --- */
+    for(let y=L.ledge;y<rows;y++){
+      for(let x=L.cliffX0;x<L.cliffX1;x++){
+        // évite la zone de la cascade (laissée à l'eau)
+        if(x>=L.fallX0 && x<L.fallX1) continue;
+        const n=(x*5+y*11)%9;
+        const ombre = x<L.cliffX0+3 || (x>L.fallX1 && x<L.fallX1+3);
+        let ch = n<2?'/':(n<3?'\\':(n<5?'#':'%'));
+        let col = ombre?PAL.rocheOmbre:PAL.roche;
+        if((x*7+y*3)%13===0) col=PAL.mousse;       // touffes de mousse
+        put(g,x,y,ch,col);
+      }
+    }
+    // bords de falaise irréguliers (déborde un peu)
+    for(let y=L.ledge;y<L.horizon;y++){
+      const w=Math.round(sinT(y*0.4)*1.5);
+      put(g, L.cliffX0-1+w, y, '%', PAL.rocheOmbre);
+      put(g, L.cliffX1+ -w, y, '#', PAL.roche);
+    }
+
+    /* --- LE CHÂTEAU --- */
+    drawCastle(g, L, t);
+
+    /* --- LA CASCADE (dévale la falaise, animée) --- */
+    for(let y=L.ledge+1;y<L.horizon;y++){
+      for(let x=L.fallX0;x<L.fallX1;x++){
+        // flux vertical défilant : phase qui descend avec le temps
+        const flow=(y*0.7 - t*9 + sinT(x*1.3+t*2)*2 + x*3.1);
+        const f=((flow%4)+4)%4;
+        let ch, ci;
+        if(f<1){ ch='|'; ci=0; } else if(f<2){ ch='!'; ci=1; }
+        else if(f<3){ ch=':'; ci=2; } else { ch=';'; ci=3; }
+        // bords plus clairs, centre plus profond
+        const edge = (x===L.fallX0||x===L.fallX1-1);
+        put(g,x,y,ch, edge?PAL.cascade[0]:PAL.cascade[ci]);
+      }
+    }
+    // écume en haut de la cascade (sortie du château)
+    for(let x=L.fallX0-1;x<=L.fallX1;x++)
+      if(sinT(x*2+t*6)>0) put(g,x,L.ledge,'~',PAL.ecume);
+
+    /* --- LE BASSIN (miroite, écume au pied de la chute) --- */
+    for(let y=L.horizon;y<rows;y++){
+      for(let x=0;x<cols;x++){
+        const prof=(y-L.horizon)/(rows-L.horizon);
+        const ci=Math.min(PAL.bassin.length-1, Math.floor(prof*PAL.bassin.length));
+        // ondulation horizontale
+        const wv=sinT(x*0.3 - t*1.5 + y) + sinT(x*0.13+t*0.8);
+        let ch = wv>0.8?'~':(wv<-0.8?'-':(((x+y)%5===0)?'.':' '));
+        let col=PAL.bassin[ci];
+        // écume sous la cascade
+        if(x>=L.fallX0-2 && x<L.fallX1+2 && y<L.horizon+3){
+          const foam=sinT(x*2+t*9+y*3);
+          if(foam>0) { ch=foam>0.6?'#':'o'; col=PAL.ecume; }
+        }
+        if(ch!==' ' || col) put(g,x,y,ch===' '?' ':ch,col);
+        else { const i=y*cols+x; g.col[i]=col; }
+      }
+    }
+
+    /* --- premier plan : herbe + arbres aux deux bords --- */
+    const grassTop=rows-Math.max(1,Math.round(rows*0.05));
+    for(let y=grassTop;y<rows;y++){
+      for(let x=0;x<cols;x++){
+        // seulement hors du bassin (gauche et droite)
+        if(x>L.cliffX0-4 && x<L.cliffX1+4) continue;
+        const sway=sinT(x*0.5+t*1.6)*0.5;
+        const k=(x*7+y*5)%3;
+        put(g,x,y, sway>0.3?'w':(k?',':'v'), PAL.herbe[(x+y)%3]);
+      }
+    }
+    // quelques arbres aux coins
+    drawTree(g, 3, grassTop, t);
+    drawTree(g, cols-5, grassTop, t);
+    if(cols>70) drawTree(g, 9, grassTop, t+1.5);
+
+    return g;
+  }
+
+  function drawCastle(g, L, t){
+    const C=L.castle;
+    // corps principal (mur entre les tours)
+    for(let x=C.x0;x<=C.x1;x++){
+      if(x>=L.fallX0 && x<L.fallX1) continue;          // l'eau sort d'ici
+      for(let y=C.baseY-1;y>C.baseY-Math.round((L.horizon-L.ledge)*0.0+5);y--){
+        // mur bas du château
+      }
+    }
+    // murailles + créneaux entre les tours
+    const wallTop=C.baseY-4;
+    for(let x=C.x0;x<=C.x1;x++){
+      if(x>=L.fallX0 && x<L.fallX1) continue;
+      for(let y=wallTop+1;y<=C.baseY-1;y++){
+        const clair = (x+y)%4===0;
+        put(g,x,y,'#', clair?PAL.murClair:PAL.mur);
+      }
+      // créneaux
+      put(g,x,wallTop, (x%2===0)?'M':' ', PAL.creneau);
+      if(x%2!==0) put(g,x,wallTop,'n',PAL.murOmbre);
+    }
+    // tours
+    for(const tw of C.tours){
+      const topY=C.baseY-tw.h;
+      for(let x=tw.x;x<tw.x+tw.w;x++){
+        for(let y=topY+2;y<=C.baseY-1;y++){
+          const clair=(x===tw.x)?false:((x+y)%5===0);
+          const ombre=(x===tw.x+tw.w-1);
+          put(g,x,y,'#', ombre?PAL.murOmbre:(clair?PAL.murClair:PAL.mur));
+        }
+        // créneaux de tour
+        put(g,x,topY+1, (x%2===0)?'M':'n', (x%2===0)?PAL.creneau:PAL.murOmbre);
+      }
+      // toit conique bleu
+      const cxT=tw.x+Math.floor(tw.w/2);
+      for(let r=0;r<3;r++){
+        const yy=topY-r;
+        for(let x=cxT-r;x<=cxT+r;x++)
+          put(g,x,yy, r===0?'^':(x===cxT-r?'/':(x===cxT+r?'\\':'=')), r===0?PAL.toitClair:PAL.toit);
+      }
+      // drapeau qui flotte au sommet
+      const fy=topY-3;
+      const wave=Math.round(sinT(t*3+tw.x)*1.5)+2;
+      put(g,cxT,fy,'|',PAL.murOmbre);
+      put(g,cxT,fy-1,'|',PAL.murOmbre);
+      const dcol=[PAL.drapeauR,PAL.drapeauB,PAL.drapeauJ][tw.x%3];
+      for(let k=1;k<=wave;k++) put(g,cxT+k,fy-1, k===wave?'>':'=', dcol);
+      // fenêtres éclairées qui scintillent (torches)
+      for(let wy=topY+4; wy<C.baseY-1; wy+=3){
+        const flick=sinT(t*5 + tw.x + wy)>(-0.3) ;
+        put(g, tw.x+Math.floor(tw.w/2), wy, flick?'8':'0', flick?PAL.fenetreVive:PAL.fenetre);
+      }
+    }
+    // grande porte au centre du mur
+    const px=Math.floor((C.x0+C.x1)/2);
+    if(!(px>=L.fallX0 && px<L.fallX1)){
+      put(g,px,C.baseY-1,'A',PAL.porte);
+      put(g,px,C.baseY-2,'n',PAL.porte);
+    }
+    // torches sur la muraille
+    for(let x=C.x0+2;x<C.x1;x+=5){
+      if(x>=L.fallX0 && x<L.fallX1) continue;
+      const fl=sinT(t*7+x)>0?'i':'!';
+      put(g,x,wallTop-1, fl, PAL.torche);
+    }
+  }
+
+  function drawTree(g, x, baseY, t){
+    const rows=g.rows;
+    const h=3;
+    put(g,x,baseY,'|',PAL.tronc);
+    for(let r=0;r<h;r++){
+      const yy=baseY-1-r;
+      const w=h-r;
+      for(let dx=-w;dx<=w;dx++){
+        const sway=Math.round(sinT(t*1.8+yy)*0.6);
+        put(g,x+dx+ (r===h-1?sway:0), yy, (dx===0?'#':((dx+yy)%2?'&':'@')), PAL.arbre);
+      }
+    }
+  }
+
+  return { PAL, makeState, render, layout, sinT };
+}
+if(typeof module!=='undefined') module.exports = ChateauCore;
+
+</script>
+<script>
+/* =================== RÉGLAGES ===================   <<< CHANGE ICI */
+const REGLAGES = {
+  TAILLE_CAR: 11,    // finesse de la bannière ASCII (px) — plus petit = plus détaillé
+  VITESSE: 1.0
+};
+
+/* ====== le catalogue : ajoute/retire des cartes ici ====== */
+const CATALOGUE = {
+  jeux:[
+    { f:'blackjack.html', ico:'21', t:'Blackjack', d:"Hot-seat à deux sur le même téléphone, contre le croupier. Le perdant paie la tournée.", tags:['2 joueurs','cartes'], c:'#E9A23B' },
+    { f:'tarot.html', ico:'T', t:'Tarot', d:"Le vrai tarot français à 78 cartes contre trois bots du bar. Enchères, chien, Petit au bout.", tags:['solo','bots'], c:'#2FD6C6' },
+    { f:'esquive.html', ico:'<>', t:'Esquive', d:"Un point de néon, des éclats qui tombent, et tes réflexes. Ça va de plus en plus vite.", tags:['arcade','réflexes'], c:'#E0392F' },
+    { f:'flipper2.html', ico:'O', t:'Flipper', d:"Un vrai flipper à moteur physique : lanceur à ressort, bumpers, slingshots, jackpot B·A·R.", tags:['physique','arcade'], c:'#E9A23B' },
+    { f:'fps.html', ico:'!', t:'La Cave', d:"Un FPS rétro façon 1992 — et c'est secrètement un jeu 2D. Nettoie la cave hantée.", tags:['fps','raycasting'], c:'#2FD6C6' },
+    { f:'course.html', ico:'=', t:'Cavale', d:"Course-poursuite nocturne en pseudo-3D. Sème les gyrophares avant l'arrestation.", tags:['course','arcade'], c:'#E0392F' },
+    { f:'vol.html', ico:'^', t:'Pilote · Tu-160', d:"Simulateur de vol : décolle, sors le train, largue les bombes, pose-toi en douceur.", tags:['simu','ascii'], c:'#E9A23B' }
+  ],
+  foraine:[
+    { f:'stand.html', ico:'+', t:'Le Stand', d:"Stand de tir forain : canards, bouteilles, cibles papier. Quatre armes, combos, 60 secondes.", tags:['tir','score'], c:'#E0392F' },
+    { f:'peche.html', ico:'J', t:'La Pêche', d:"Pêche aux canards : attrape l'anneau, gagne un lot — fêté par un feu d'artifice ASCII.", tags:['adresse','lots'], c:'#2FD6C6' }
+  ],
+  ascii:[
+    { f:'fumee.html', ico:'~', t:'Fumée', d:"Fluide interactif : remue de la fumée et de l'encre colorées du doigt. Ça tourbillonne, ça monte, ça se mélange.", tags:['fluide','interactif'], c:'#2FD6C6' },
+    { f:'demo.html', ico:'#', t:'3H du mat', d:"Démo temps réel : plasma, tunnel, rotozoom, feu, scroller — et musique chiptune synthétisée.", tags:['demoscene','musique'], c:'#E9A23B' },
+    { f:'ascii.html', ico:'@', t:'Donut spatial', d:"Le légendaire donut.c en ASCII, qui se balade tout seul devant un ciel demoscene.", tags:['3d','espace'], c:'#2FD6C6' },
+    { f:'tu160.html', ico:'A', t:'Tu-160 3D', d:"Le bombardier « White Swan » modélisé en 3D ASCII, qui tourne. Géométrie variable des ailes.", tags:['3d','avion'], c:'#E0392F' },
+    { f:'paysage.html', ico:'Y', t:'Paysage', d:"Fond d'écran vivant : soleil qui rayonne, arbres qui bruissent, nuages, herbe au vent.", tags:['fond','nature'], c:'#2FD6C6' },
+    { f:'phi.html', ico:'φ', t:"Nombre d'or", d:"Le cycle des figures dorées — cercle, rectangle, triangle, pentagramme — relié par la spirale.", tags:['géométrie','φ'], c:'#E9A23B' }
+  ]
+};
+
+/* ---- fabrique les cartes ---- */
+function carte(item){
+  const a=document.createElement('a');
+  a.className='card'; a.href=item.f; a.style.setProperty('--accent', item.c);
+  a.innerHTML =
+    '<span class="ico">'+item.ico+'</span>'+
+    '<h3>'+item.t+'</h3>'+
+    '<p>'+item.d+'</p>'+
+    '<div class="tags">'+item.tags.map(t=>'<span>'+t+'</span>').join('')+'</div>'+
+    '<span class="go">jouer →</span>';
+  return a;
+}
+function remplir(id, liste){
+  const g=document.getElementById(id);
+  liste.forEach(it=>g.appendChild(carte(it)));
+}
+remplir('gridJeux', CATALOGUE.jeux);
+remplir('gridForaine', CATALOGUE.foraine);
+remplir('gridAscii', CATALOGUE.ascii);
+
+/* ---- horloge live (clin d'œil "après minuit") ---- */
+function tic(){
+  const d=new Date();
+  const p=n=>String(n).padStart(2,'0');
+  document.getElementById('clock').textContent=p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());
+}
+setInterval(tic,1000); tic();
+
+/* ====== la bannière ASCII colorée (château + cascade) ====== */
+const scene = document.getElementById('scene');
+const sctx = scene.getContext('2d');
+sctx.imageSmoothingEnabled = false;
+const core = ChateauCore();
+let state=null, CW=7, CH=11, dpr=1, cols=0, rows=0;
+
+function dimScene(){
+  dpr=Math.min(window.devicePixelRatio||1, 2);
+  const r=scene.getBoundingClientRect();
+  const cssW=Math.max(240,r.width), cssH=Math.max(200,r.height);
+  scene.width=Math.round(cssW*dpr); scene.height=Math.round(cssH*dpr);
+  const base=REGLAGES.TAILLE_CAR;
+  CW=base*0.6; CH=base;
+  cols=Math.max(50, Math.floor(cssW/CW));
+  rows=Math.max(28, Math.floor(cssH/CH));
+  state=core.makeState(cols, rows, 42);
+  sctx.setTransform(dpr,0,0,dpr,0,0);
+  sctx.font=`${base}px ui-monospace,'SF Mono',monospace`;
+  sctx.textBaseline='top';
+}
+addEventListener('resize', dimScene);
+
+let t0=performance.now();
+function frame(now){
+  requestAnimationFrame(frame);
+  const t=(now-t0)/1000 * REGLAGES.VITESSE;
+  const g=core.render(state, t);
+  sctx.clearRect(0,0,scene.width,scene.height);
+  let prevCol=null;
+  for(let y=0;y<rows;y++){
+    for(let x=0;x<cols;x++){
+      const i=y*cols+x;
+      const ch=g.ch[i];
+      if(ch===' ' || !g.col[i]) continue;
+      if(g.col[i]!==prevCol){ sctx.fillStyle=g.col[i]; prevCol=g.col[i]; }
+      sctx.fillText(ch, x*CW, y*CH);
+    }
+  }
+}
+dimScene();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

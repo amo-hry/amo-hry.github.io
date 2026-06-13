@@ -1,0 +1,687 @@
+<!-- ============================================================
+     LA PÊCHE — pêche aux canards foraine · L'arrière-salle
+     Un bassin, du courant, des canards en caoutchouc qui tanguent.
+     Lâche l'hameçon sur l'anneau au bon moment. Chaque prise
+     révèle un lot caché — fêté par un feu d'artifice EN ASCII.
+     Et quelque part nage le Canard d'Or...
+     Souris/doigt : viser · clic/tape : lâcher la ligne
+     À régler en premier :  <<< CHANGE ICI  (dans le script)
+     ============================================================ -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>La Pêche aux canards — L'arrière-salle</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{ --ink:#0E0A0B; --bone:#E8E2D6; --smoke:#8A8079;
+         --neon:#2FD6C6; --oxblood:#E0392F; --sodium:#E9A23B; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    background:var(--ink); color:var(--bone);
+    font-family:'Space Mono',monospace; overflow:hidden;
+    display:flex; flex-direction:column; align-items:center;
+    touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+    background-image:
+      radial-gradient(60vw 50vw at 85% -8%, rgba(47,214,198,.09), transparent 60%),
+      radial-gradient(50vw 50vw at -10% 110%, rgba(233,162,59,.08), transparent 60%);
+  }
+  body::after{
+    content:""; position:fixed; inset:0; z-index:999; pointer-events:none;
+    opacity:.26; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .hud{ width:min(720px,96vw); display:flex; justify-content:space-between;
+    align-items:flex-end; padding:.6rem 0 .4rem; }
+  .hud .ttl{ font-family:'Press Start 2P',monospace; font-size:.8rem;
+    color:var(--neon); text-shadow:2px 2px 0 rgba(47,214,198,.25); }
+  .hud .sub{ font-size:.52rem; letter-spacing:.2em; text-transform:uppercase;
+    color:var(--smoke); margin-top:.4rem; }
+  .hud .right{ text-align:right; font-family:'Press Start 2P',monospace; }
+  .hud .sc{ font-size:.78rem; color:var(--sodium); text-shadow:0 0 8px rgba(233,162,59,.6); }
+  .hud .meta{ font-size:.55rem; color:var(--smoke); margin-top:.4rem; }
+  .hud .meta b{ color:var(--neon); }
+
+  .stage{ position:relative; width:min(720px,96vw); }
+  canvas{ display:block; width:100%; aspect-ratio:16/9; cursor:none;
+    border-radius:10px; border:2px solid rgba(232,226,214,.13); background:#0a1418; min-height:46vw; max-height:80vh;}
+
+  .lots{ width:min(720px,96vw); display:flex; gap:.4rem; padding:.5rem 0 .15rem;
+    flex-wrap:wrap; justify-content:center; min-height:2.2rem; }
+  .lots .lot{ font-size:.56rem; letter-spacing:.04em; text-transform:uppercase;
+    color:var(--smoke); border:1px solid rgba(232,226,214,.18); border-radius:7px;
+    padding:.3rem .5rem; display:flex; align-items:center; gap:.35rem; }
+  .lots .lot b{ color:var(--bone); }
+  .lots .lot.or{ border-color:var(--sodium); color:var(--sodium); }
+  .lots .lot.or b{ color:var(--sodium); }
+  .lots .vide{ color:var(--smoke); font-size:.56rem; opacity:.6; }
+
+  .overlay{ position:absolute; inset:0; display:grid; place-items:center;
+    text-align:center; background:rgba(10,12,16,.9); border-radius:10px; padding:1.3rem; z-index:40; }
+  .overlay.hidden{ display:none; }
+  .overlay h2{ font-family:'Press Start 2P',monospace; font-size:1.2rem; line-height:1.5;
+    color:var(--sodium); text-shadow:0 0 14px rgba(233,162,59,.5); margin-bottom:.85rem; }
+  .overlay p{ color:var(--smoke); font-size:.68rem; line-height:1.8;
+    margin-bottom:1rem; max-width:42ch; }
+  .overlay p b{ color:var(--bone); }
+  .overlay .stats{ font-family:'Press Start 2P',monospace; font-size:.58rem; line-height:2;
+    color:var(--bone); margin-bottom:1rem; }
+  .overlay .stats b{ color:var(--sodium); }
+  button.go{ font-family:'Press Start 2P',monospace; font-size:.68rem; cursor:pointer;
+    background:var(--neon); color:var(--ink); border:none; border-radius:6px;
+    padding:.95rem 1.3rem; }
+  button.go:active{ transform:translateY(1px); }
+  .hint{ width:min(720px,96vw); text-align:center; color:var(--smoke);
+    font-size:.55rem; letter-spacing:.05em; padding:.4rem 0; }
+</style>
+</head>
+<body>
+
+  <div class="hud">
+    <div>
+      <div class="ttl">LA PÊCHE</div>
+      <div class="sub">pêche aux canards · l'arrière-salle</div>
+    </div>
+    <div class="right">
+      <div class="sc"><span id="score">0</span></div>
+      <div class="meta">hameçons <b id="tent">8</b></div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <canvas id="cv" width="640" height="360"></canvas>
+    <div class="overlay" id="ov">
+      <div>
+        <h2 id="ovT">LA PÊCHE<br>AUX CANARDS</h2>
+        <div id="ovBody">
+          <p>8 hameçons. Suis un canard, lâche la ligne pour attraper <b>l'anneau sur sa tête</b> — ils tanguent, vise juste. Chaque prise cache un lot : sucette, yoyo, peluche... et le <b>Canard d'Or à 500</b> qui file vite. Ici tout le monde repart avec quelque chose.</p>
+        </div>
+        <button class="go" id="play">Prendre une canne</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="lots" id="lotsBar"></div>
+  <div class="hint">souris/doigt : viser · clic/tape : lâcher la ligne</div>
+
+<script>
+/* ============================================================
+   PÊCHE CORE — la pêche aux canards de l'arrière-salle
+   Un bassin, du courant sur deux rangées, des canards qui
+   tanguent sur les vagues, un hameçon à lâcher au bon moment
+   sur l'anneau. Chaque prise révèle un lot caché (tirage
+   pondéré) ; le Canard d'Or visible file à toute allure.
+   Aucun DOM : tout est testable en Node, puis injecté.
+   ============================================================ */
+function PecheCore(opts){
+  opts = opts || {};
+  const W = 640, H = 360;
+  const CFG = Object.assign({
+    tentatives: 8, courant: 1, seed: (Math.random()*1e9)|0
+  }, opts);
+
+  function mulberry32(seed){
+    let a = seed>>>0;
+    return function(){
+      a|=0; a=(a+0x6D2B79F5)|0;
+      let t=Math.imul(a^(a>>>15),1|a);
+      t=(t+Math.imul(t^(t>>>7),61|t))^t;
+      return ((t^(t>>>14))>>>0)/4294967296;
+    };
+  }
+  const rng = mulberry32(CFG.seed);
+
+  /* ---------- les lots ---------- */
+  const LOTS = [
+    { id:'sucette',  nom:'Sucette',           pts:10,  poids:40 },
+    { id:'yoyo',     nom:'Yoyo',              pts:25,  poids:25 },
+    { id:'portecles',nom:'Porte-clés canard', pts:50,  poids:20 },
+    { id:'peluche',  nom:'Peluche',           pts:100, poids:12 },
+    { id:'or',       nom:'LE CANARD D\'OR',   pts:500, poids:3  }
+  ];
+  const POIDS_TOTAL = LOTS.reduce((a,l)=>a+l.poids,0);
+  function tirageLot(force){
+    if (force) return LOTS.find(l=>l.id===force);
+    let r = rng()*POIDS_TOTAL;
+    for (const l of LOTS){ r -= l.poids; if (r<0) return l; }
+    return LOTS[0];
+  }
+
+  /* ---------- l'art ASCII des lots (pour l'animation de gain) ---------- */
+  const ARTS = {
+    sucette: [
+      "    .-=====-.",
+      "   ( @ @ @ @ )",
+      "  ( @ SUCRE @ )",
+      "   ( @ @ @ @ )",
+      "    '-=====-'",
+      "        |",
+      "        |",
+      "        |"
+    ],
+    yoyo: [
+      "      ___",
+      "    .'   '.",
+      "   |  (O)  |",
+      "    '.___.'",
+      "       \\",
+      "        \\",
+      "         o"
+    ],
+    portecles: [
+      "      .--.",
+      "     ( () )",
+      "      '||'",
+      "    __ || __",
+      "  <(o ).||.",
+      "   (  v__)>",
+      "    '----'"
+    ],
+    peluche: [
+      "    (.) (.)",
+      "   ( o___o )",
+      "    (  Y  )",
+      "   .-'---'-.",
+      "  ( |     | )",
+      "   '|     |'",
+      "    '-----'"
+    ],
+    or: [
+      "   $   __   $",
+      "     <(o )____",
+      "  $   ( ._> /  $",
+      "       '---'",
+      "   $ ~~~~~~~~ $",
+      "    GROS LOT !"
+    ]
+  };
+
+  /* ---------- géométrie du bassin ---------- */
+  const RANGS = [
+    { y:206, dir:-1, v:36, taille:0.8,  n:5 },   // rangée du fond
+    { y:262, dir:+1, v:54, taille:1.05, n:5 }    // rangée de devant
+  ];
+  const EAU_Y = 168, FOND_Y = 304;
+  const HAM_Y0 = 46, HAM_V = 150;
+
+  function vague(x, t){
+    return Math.sin(x*0.021 + t*1.25)*3.6 + Math.sin(x*0.047 - t*0.8)*2.2;
+  }
+
+  /* ---------- état ---------- */
+  const S = {
+    tentatives: CFG.tentatives, score: 0, lots: [],
+    temps: 0, over: false, events: []
+  };
+  const canards = [];
+  function nouveauCanard(rang, entree){
+    const R = RANGS[rang];
+    return {
+      rang, dir: R.dir,
+      x: entree ? (R.dir>0 ? -50-rng()*90 : W+50+rng()*90) : rng()*W,
+      v: R.v*(0.85+rng()*0.3)*CFG.courant,
+      taille: R.taille*(0.92+rng()*0.16),
+      phase: rng()*6.28, or:false
+    };
+  }
+  for (let r=0;r<2;r++) for (let i=0;i<RANGS[r].n;i++)
+    canards.push(nouveauCanard(r, false));
+  let tOr = 14 + rng()*10;
+
+  const hame = { etat:'pret', x: W/2, y: HAM_Y0, prevY: HAM_Y0, prise: null };
+
+  /* ---------- positions utiles ---------- */
+  function duckY(c, t){
+    return RANGS[c.rang].y + vague(c.x, t) + Math.sin(t*2.1 + c.phase)*2.2;
+  }
+  function ringPos(c, t){
+    return { x: c.x - c.dir*2, y: duckY(c, t) - c.taille*15, r: 9*c.taille };
+  }
+
+  /* ---------- déroulé ---------- */
+  function step(dt){
+    S.temps += dt;
+    const t = S.temps;
+    for (const c of canards){
+      c.x += c.dir * c.v * (c.or?1.9:1) * dt;
+      if (c.x < -160 || c.x > W+160){
+        if (c.or){ canards.splice(canards.indexOf(c),1); continue; }
+        Object.assign(c, nouveauCanard(c.rang, true));
+      }
+    }
+    if (!S.over && !canards.some(c=>c.or)){
+      tOr -= dt;
+      if (tOr <= 0){
+        const c = nouveauCanard(1, true);
+        c.or = true; c.v = RANGS[1].v*CFG.courant;
+        canards.push(c);
+        S.events.push({type:'or_pop'});
+        tOr = 18 + rng()*12;
+      }
+    }
+    if (hame.etat === 'descend'){
+      hame.prevY = hame.y;
+      hame.y += HAM_V*dt;
+      for (const c of canards){
+        const a = ringPos(c, t);
+        if (hame.prevY < a.y && hame.y >= a.y &&
+            Math.abs(hame.x - a.x) <= a.r){
+          hame.prise = { taille:c.taille, or:c.or };
+          canards.splice(canards.indexOf(c),1);
+          if (!c.or) canards.push(nouveauCanard(c.rang, true));
+          hame.etat = 'remonte';
+          S.events.push({type:'accroche', or:c.or});
+          break;
+        }
+      }
+      if (hame.etat==='descend' && hame.y >= FOND_Y){
+        hame.etat = 'remonte';
+        S.tentatives--;
+        S.events.push({type:'plouf'});
+        if (S.tentatives <= 0) finir();
+      }
+    } else if (hame.etat === 'remonte'){
+      hame.y -= HAM_V*1.25*dt;
+      if (hame.y <= HAM_Y0){
+        hame.y = HAM_Y0;
+        if (hame.prise){
+          const lot = tirageLot(hame.prise.or ? 'or' : null);
+          S.lots.push(lot.id);
+          S.score += lot.pts;
+          S.tentatives--;
+          S.events.push({type:'lot', lot});
+          hame.prise = null;
+          if (S.tentatives <= 0) finir();
+        }
+        hame.etat = 'pret';
+      }
+    }
+  }
+  function finir(){
+    if (S.over) return;
+    S.over = true;
+    S.events.push({type:'fin'});
+  }
+
+  /* ---------- l'action du joueur ---------- */
+  function lacher(x){
+    if (S.over || hame.etat!=='pret' || S.tentatives<=0) return false;
+    hame.x = Math.max(20, Math.min(W-20, x));
+    hame.y = hame.prevY = HAM_Y0;
+    hame.etat = 'descend';
+    S.events.push({type:'lacher'});
+    return true;
+  }
+  function viser(x){
+    if (hame.etat==='pret') hame.x = Math.max(20, Math.min(W-20, x));
+  }
+
+  return { W, H, S, LOTS, ARTS, RANGS, EAU_Y, FOND_Y, HAM_Y0, HAM_V,
+           canards, hame, vague, duckY, ringPos,
+           step, lacher, viser, tirageLot };
+}
+if (typeof module !== 'undefined') module.exports = PecheCore;
+
+</script>
+<script>
+/* =================== RÉGLAGES ===================   <<< CHANGE ICI */
+const REGLAGES = {
+  HAMECONS: 8,     // nombre de tentatives par partie
+  COURANT: 1.0,    // vitesse du courant (1 = normal)
+  VOLUME: 0.8
+};
+
+/* =================== MISE EN PLACE =================== */
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const ov = document.getElementById('ov');
+const ovT = document.getElementById('ovT');
+const ovBody = document.getElementById('ovBody');
+const playBtn = document.getElementById('play');
+const scoreEl = document.getElementById('score');
+const tentEl = document.getElementById('tent');
+const lotsBar = document.getElementById('lotsBar');
+
+let core = null, started = false, record = 0;
+let mx = 320, ripples = [], asciiAnim = null;
+const LOT_INFO = {
+  sucette:{nom:'Sucette',c:'#E0392F'}, yoyo:{nom:'Yoyo',c:'#2FD6C6'},
+  portecles:{nom:'Porte-clés',c:'#E9A23B'}, peluche:{nom:'Peluche',c:'#E8E2D6'},
+  or:{nom:"Canard d'Or",c:'#E9A23B'}
+};
+
+function newGame(){
+  core = PecheCore({ tentatives:REGLAGES.HAMECONS, courant:REGLAGES.COURANT });
+  ripples = []; asciiAnim = null;
+  majLots();
+}
+
+/* ---- bandeau des lots gagnés ---- */
+function majLots(){
+  const counts = {};
+  for (const id of core.S.lots) counts[id] = (counts[id]||0)+1;
+  if (!core.S.lots.length){
+    lotsBar.innerHTML = '<span class="vide">— ton tableau de chasse apparaîtra ici —</span>';
+    return;
+  }
+  lotsBar.innerHTML = '';
+  for (const id of ['or','peluche','portecles','yoyo','sucette']){
+    if (!counts[id]) continue;
+    const d = document.createElement('div');
+    d.className = 'lot' + (id==='or'?' or':'');
+    d.innerHTML = LOT_INFO[id].nom + ' <b>×'+counts[id]+'</b>';
+    lotsBar.appendChild(d);
+  }
+}
+
+/* ---- sons ---- */
+let AC=null, master=null, noiseBuf=null;
+function audioInit(){
+  if (AC){ if(AC.state==='suspended') AC.resume(); return; }
+  try{
+    AC = new (window.AudioContext||window.webkitAudioContext)();
+    master = AC.createGain(); master.gain.value = REGLAGES.VOLUME*0.5;
+    master.connect(AC.destination);
+    noiseBuf = AC.createBuffer(1, AC.sampleRate, AC.sampleRate);
+    const d = noiseBuf.getChannelData(0);
+    for (let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  }catch(e){ AC=null; }
+}
+function snd(f,d,type,g,slide){
+  if(!AC) return;
+  const t=AC.currentTime, o=AC.createOscillator(), v=AC.createGain();
+  o.type=type; o.frequency.setValueAtTime(f,t);
+  if(slide) o.frequency.exponentialRampToValueAtTime(slide,t+d);
+  v.gain.setValueAtTime(g,t); v.gain.exponentialRampToValueAtTime(0.0001,t+d);
+  o.connect(v); v.connect(master); o.start(t); o.stop(t+d+0.02);
+}
+function plouf(){
+  if(!AC) return;
+  const t=AC.currentTime, s=AC.createBufferSource(); s.buffer=noiseBuf;
+  const f=AC.createBiquadFilter(); f.type='lowpass';
+  f.frequency.setValueAtTime(800,t); f.frequency.exponentialRampToValueAtTime(180,t+0.25);
+  const v=AC.createGain(); v.gain.setValueAtTime(0.18,t);
+  v.gain.exponentialRampToValueAtTime(0.0001,t+0.3);
+  s.connect(f); f.connect(v); v.connect(master); s.start(t); s.stop(t+0.32);
+}
+const SONS = {
+  lacher: ()=>snd(420,.12,'sine',.06,170),
+  plouf: plouf,
+  accroche: (or)=>{ snd(880,.06,'square',.08); setTimeout(()=>snd(1320,.08,'square',.06),60); },
+  or_pop: ()=>[1320,1660,1980].forEach((f,i)=>setTimeout(()=>snd(f,.05,'sine',.04),i*50)),
+  fin: ()=>{ snd(660,.3,'sine',.08); setTimeout(()=>snd(880,.4,'sine',.07),250); }
+};
+function fanfare(lot){
+  if(!AC) return;
+  const notes = lot.id==='or'
+    ? [523,659,784,1047,1319,1047,1319,1568]
+    : lot.id==='peluche' ? [523,659,784,1047]
+    : lot.id==='portecles' ? [440,554,659] : [392,523];
+  notes.forEach((f,i)=>setTimeout(()=>{
+    snd(f,.14,'square',.06); snd(f*2,.1,'sine',.03);
+  }, i*90));
+}
+
+/* ---- l'animation ASCII d'un lot gagné ---- */
+function lancerAscii(lot){
+  const art = core.ARTS[lot.id];
+  asciiAnim = {
+    lot, art, age:0,
+    dur: lot.id==='or' ? 3.4 : 2.4,
+    parts: []
+  };
+  // confettis ASCII qui jaillissent
+  const N = lot.id==='or' ? 60 : 32;
+  const chars = lot.id==='or' ? ['$','*','✦','+','o'] : ['*','+','.','o','~'];
+  for (let i=0;i<N;i++){
+    const a = Math.random()*Math.PI*2, sp = 90+Math.random()*230;
+    asciiAnim.parts.push({
+      x:320, y:150, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp-90,
+      ch: chars[(Math.random()*chars.length)|0],
+      c: lot.id==='or' ? '#E9A23B'
+         : ['#2FD6C6','#E9A23B','#E0392F','#E8E2D6'][i%4],
+      age:0, vie:1.1+Math.random()*0.9
+    });
+  }
+  fanfare(lot);
+}
+function dessinerAscii(dt){
+  const A = asciiAnim;
+  A.age += dt;
+  if (A.age >= A.dur){ asciiAnim = null; return; }
+  // voile sombre
+  const fadeIn = Math.min(1, A.age/0.3);
+  const fadeOut = Math.min(1, (A.dur-A.age)/0.5);
+  const veil = 0.74*Math.min(fadeIn,fadeOut);
+  ctx.fillStyle = 'rgba(8,10,14,'+veil+')';
+  ctx.fillRect(0,0,640,360);
+
+  // confettis ASCII
+  ctx.font = '14px "Space Mono", monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const p of A.parts){
+    p.age += dt; if (p.age>=p.vie) continue;
+    p.vy += 360*dt; p.x += p.vx*dt; p.y += p.vy*dt;
+    ctx.globalAlpha = Math.min(fadeOut, 1-p.age/p.vie);
+    ctx.fillStyle = p.c;
+    ctx.fillText(p.ch, p.x, p.y);
+  }
+  ctx.globalAlpha = 1;
+
+  // le lot en gros ASCII, qui "pop" puis flotte
+  const pop = A.age<0.4 ? A.age/0.4 : 1;
+  const bob = Math.sin(A.age*3)*4;
+  const scale = (0.6 + pop*0.4);
+  const fs = Math.round(15*scale);
+  ctx.font = '700 '+fs+'px "Space Mono", monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const lh = fs*1.02;
+  const art = A.art;
+  const y0 = 150 + bob - (art.length*lh)/2;
+  ctx.globalAlpha = fadeOut;
+  for (let i=0;i<art.length;i++){
+    // halo
+    ctx.fillStyle = A.lot.id==='or' ? 'rgba(233,162,59,.35)' : 'rgba(47,214,198,.28)';
+    ctx.fillText(art[i], 320, y0+i*lh+1);
+    ctx.fillStyle = A.lot.id==='or' ? '#FFE6A6' : '#E8E2D6';
+    ctx.fillText(art[i], 320, y0+i*lh);
+  }
+  // bandeau "TU GAGNES"
+  ctx.font = '700 14px "Press Start 2P", monospace';
+  ctx.fillStyle = A.lot.id==='or' ? '#E9A23B' : '#2FD6C6';
+  ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 12;
+  ctx.fillText('TU GAGNES', 320, y0 - lh*1.6 + bob);
+  ctx.fillStyle = '#E8E2D6';
+  ctx.font = '700 11px "Press Start 2P", monospace';
+  ctx.fillText(A.lot.nom + '  +' + A.lot.pts, 320, y0 + art.length*lh + lh*0.8 + bob);
+  ctx.shadowBlur = 0;
+  ctx.globalAlpha = 1;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+}
+
+/* ---- événements moteur ---- */
+function consume(){
+  for (const ev of core.S.events.splice(0)){
+    if (ev.type==='lacher') SONS.lacher();
+    else if (ev.type==='plouf'){ SONS.plouf();
+      ripples.push({x:core.hame.x, y:core.FOND_Y-90, age:0}); }
+    else if (ev.type==='accroche') SONS.accroche(ev.or);
+    else if (ev.type==='or_pop') SONS.or_pop();
+    else if (ev.type==='lot'){ lancerAscii(ev.lot); majLots(); }
+    else if (ev.type==='fin'){ SONS.fin(); setTimeout(finPartie, 900); }
+  }
+}
+function finPartie(){
+  started = false;
+  record = Math.max(record, core.S.score);
+  const aOr = core.S.lots.includes('or');
+  ovT.innerHTML = aOr ? 'LE CANARD D\'OR !' : 'BIEN PÊCHÉ !';
+  ovBody.innerHTML = '<div class="stats">SCORE <b>'+core.S.score.toLocaleString('fr-FR')+'</b><br>'+
+    'lots pêchés <b>'+core.S.lots.length+'</b>'+(aOr?' · <b>+ le gros lot !</b>':'')+'<br>'+
+    'record du soir <b>'+record.toLocaleString('fr-FR')+'</b></div>';
+  playBtn.textContent = 'Rejouer';
+  ov.classList.remove('hidden');
+}
+
+/* ---- dessin du bassin ---- */
+function drawDuck(c, t){
+  const y = core.duckY(c, t);
+  const s = c.taille, tilt = Math.sin(t*2.1 + c.phase)*0.12;
+  ctx.save();
+  ctx.translate(c.x, y);
+  ctx.rotate(tilt);
+  ctx.scale(c.dir, 1);
+  // reflet
+  ctx.globalAlpha = 0.18;
+  ctx.fillStyle = c.or ? '#E9A23B' : '#E0392F';
+  ctx.beginPath(); ctx.ellipse(0, 14*s, 13*s, 4*s, 0, 0, 7); ctx.fill();
+  ctx.globalAlpha = 1;
+  // corps
+  const corps = c.or ? '#E9A23B' : '#E0392F';
+  ctx.fillStyle = corps;
+  ctx.beginPath(); ctx.ellipse(0, 0, 14*s, 9*s, 0, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(-9*s, -2*s, 7*s, 6*s, 0.5, 0, 7); ctx.fill(); // queue
+  // tête
+  ctx.beginPath(); ctx.arc(10*s, -8*s, 6.5*s, 0, 7); ctx.fill();
+  // bec
+  ctx.fillStyle = '#E9A23B';
+  if (c.or) ctx.fillStyle = '#b5302a';
+  ctx.beginPath();
+  ctx.moveTo(15*s,-9*s); ctx.lineTo(21*s,-7.5*s); ctx.lineTo(15*s,-6*s); ctx.closePath(); ctx.fill();
+  // œil
+  ctx.fillStyle = '#16100c';
+  ctx.beginPath(); ctx.arc(11*s,-9*s, 1.3*s, 0, 7); ctx.fill();
+  // anneau sur la tête (la cible !)
+  const a = core.ringPos(c, t);
+  ctx.strokeStyle = c.or ? '#FFF4DC' : '#2FD6C6';
+  ctx.lineWidth = 2.4*s;
+  ctx.globalAlpha = 0.92;
+  // dessiné en repère local : au-dessus de la tête
+  ctx.beginPath();
+  ctx.ellipse(8*s, -15*s, 7*s, 3*s, 0, 0, 7); ctx.stroke();
+  ctx.globalAlpha = 1;
+  if (c.or){
+    ctx.fillStyle = 'rgba(255,244,220,.8)';
+    ctx.font = (9*s)+'px "Press Start 2P", monospace';
+    ctx.textAlign = 'center';
+  }
+  ctx.restore();
+}
+function drawScene(t, dt){
+  // ciel de baraque + guirlande
+  ctx.fillStyle = '#140e10'; ctx.fillRect(0,0,640,core.EAU_Y);
+  for (let i=0;i<16;i++){
+    const x=22+i*40, on=Math.sin(t*3+i*1.3)>-0.4;
+    ctx.fillStyle = on ? (i%2?'#E9A23B':'#2FD6C6') : '#3a3034';
+    ctx.beginPath(); ctx.arc(x, 14+Math.sin(i*2.2)*3, 3.2, 0, 7); ctx.fill();
+  }
+  ctx.font='12px "Press Start 2P", monospace';
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  const fl = Math.sin(t*15)>0.95?0.4:1;
+  ctx.fillStyle='rgba(47,214,198,'+(0.9*fl)+')';
+  ctx.shadowColor='rgba(47,214,198,.8)'; ctx.shadowBlur=13*fl;
+  ctx.fillText('PÊCHE AUX CANARDS', 320, 60);
+  ctx.shadowBlur=0; ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+
+  // l'eau
+  const wg = ctx.createLinearGradient(0,core.EAU_Y,0,core.FOND_Y);
+  wg.addColorStop(0,'#15414a'); wg.addColorStop(.5,'#103038'); wg.addColorStop(1,'#0a2026');
+  ctx.fillStyle = wg; ctx.fillRect(0,core.EAU_Y,640,core.FOND_Y-core.EAU_Y);
+  // bord du bassin
+  ctx.fillStyle='#3a2a1a'; ctx.fillRect(0,core.EAU_Y-6,640,7);
+  ctx.fillStyle='#2a1d10'; ctx.fillRect(0,core.FOND_Y,640,360-core.FOND_Y);
+
+  // vaguelettes (lignes sinusoïdales qui défilent)
+  ctx.strokeStyle = 'rgba(47,214,198,.10)'; ctx.lineWidth = 1;
+  for (let row=0; row<6; row++){
+    const yy = core.EAU_Y + 12 + row*22;
+    ctx.beginPath();
+    for (let x=0;x<=640;x+=8){
+      const y = yy + core.vague(x + row*30, t);
+      x===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+  // ronds dans l'eau (plouf / accroche)
+  for (let i=ripples.length-1;i>=0;i--){
+    const r = ripples[i]; r.age += dt;
+    if (r.age>0.7){ ripples.splice(i,1); continue; }
+    ctx.strokeStyle = 'rgba(47,214,198,'+(0.4*(1-r.age/0.7))+')';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.ellipse(r.x, r.y, r.age*40, r.age*14, 0, 0, 7); ctx.stroke();
+  }
+
+  // canards rangée du fond puis devant
+  for (const c of core.canards) if (c.rang===0) drawDuck(c, t);
+  for (const c of core.canards) if (c.rang===1) drawDuck(c, t);
+
+  // la ligne + l'hameçon
+  const h = core.hame;
+  ctx.strokeStyle = 'rgba(232,226,214,.5)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(h.x, 0); ctx.lineTo(h.x, h.y); ctx.stroke();
+  // hameçon
+  ctx.strokeStyle = '#cfd4da'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(h.x-3, h.y, 4, -0.3, Math.PI*1.1); ctx.stroke();
+  if (h.prise){
+    // un canard accroché qui remonte
+    ctx.fillStyle = h.prise.or ? '#E9A23B' : '#E0392F';
+    ctx.beginPath(); ctx.ellipse(h.x, h.y+8, 11*h.prise.taille, 7*h.prise.taille, 0, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(h.x+7*h.prise.taille, h.y+3, 5*h.prise.taille, 0, 7); ctx.fill();
+  }
+  // canne (en bas, qui suit la visée quand on est prêt)
+  if (h.etat==='pret'){
+    ctx.strokeStyle='#6a4a28'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(h.x, 360); ctx.lineTo(h.x, 344); ctx.stroke();
+    // repère de visée
+    ctx.strokeStyle='rgba(47,214,198,.5)'; ctx.lineWidth=1;
+    ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(h.x, h.y+8); ctx.lineTo(h.x, core.FOND_Y); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+/* ---- boucle ---- */
+let last = performance.now();
+function frame(now){
+  requestAnimationFrame(frame);
+  let dt=(now-last)/1000; last=now; if(dt>0.05) dt=0.05;
+  if (started && !asciiAnim) core.step(dt);
+  else if (started && asciiAnim) core.step(dt*0.15);  // l'eau tourne au ralenti pendant le gain
+  consume();
+  drawScene(now/1000, dt);
+  if (asciiAnim) dessinerAscii(dt);
+  scoreEl.textContent = core.S.score.toLocaleString('fr-FR');
+  tentEl.textContent = Math.max(0, core.S.tentatives);
+}
+
+/* ---- entrées ---- */
+function px(e){
+  const r = cv.getBoundingClientRect();
+  const cx = e.clientX!==undefined ? e.clientX : e.touches[0].clientX;
+  return (cx-r.left)*640/r.width;
+}
+cv.addEventListener('mousemove', e=>{ mx=px(e); if(started&&!asciiAnim) core.viser(mx); });
+cv.addEventListener('mousedown', e=>{ audioInit(); if(started&&!asciiAnim) core.lacher(px(e)); });
+cv.addEventListener('touchstart', e=>{
+  audioInit(); const x=px(e); mx=x;
+  if(started&&!asciiAnim){ core.viser(x); core.lacher(x); }
+  e.preventDefault();
+},{passive:false});
+
+playBtn.addEventListener('click', ()=>{
+  audioInit(); newGame(); started=true; ov.classList.add('hidden');
+});
+
+newGame();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
